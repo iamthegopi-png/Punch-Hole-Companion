@@ -1,0 +1,6 @@
+{
+  "appId": "com.companion.punchhole",
+  "appName": "Punch Hole Companion",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}
