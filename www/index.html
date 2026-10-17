@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Punch Hole Companion — Wisdom & Motivation Edition</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(180deg, #3f46cc 0%, #6370f5 45%, #2a3182 100%);
+      color: #ffffff;
+    }
+
+    body.transparent-overlay {
+      background: transparent !important;
+    }
+    body.transparent-overlay .status-bar,
+    body.transparent-overlay #ui-dock,
+    body.transparent-overlay #cutout-wrapper,
+    body.transparent-overlay #restore-ui-btn {
+      display: none !important;
+    }
+
+    #scene {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+      touch-action: none;
+    }
+
+    /* Status Bar */
+    .status-bar {
+      position: absolute;
+      top: 18px;
+      left: 28px;
+      right: 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 15px;
+      font-weight: 700;
+      color: #0b0d17;
+      z-index: 5;
+      pointer-events: none;
+    }
+    .signal-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      height: 13px;
+    }
+    .signal-bars span {
+      width: 3.2px;
+      background: #0b0d17;
+      border-radius: 1.5px;
+    }
+    .signal-bars span:nth-child(1) { height: 4px; }
+    .signal-bars span:nth-child(2) { height: 7px; }
+    .signal-bars span:nth-child(3) { height: 10px; }
+    .signal-bars span:nth-child(4) { height: 13px; }
+
+    /* Interactive Punch Hole / Dynamic Island */
+    #cutout-wrapper {
+      position: absolute;
+      top: 11px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #punch-hole {
+      width: 126px;
+      height: 35px;
+      background: #050608;
+      border-radius: 999px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+      transition:
+        width 0.4s cubic-bezier(0.25, 1, 0.5, 1),
+        height 0.4s cubic-bezier(0.25, 1, 0.5, 1),
+        transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    #punch-hole.circle-mode {
+      width: 35px;
+      height: 35px;
+      padding: 0;
+      justify-content: center;
+    }
+    #punch-hole.circle-mode #timer-badge { display: none; }
+    #timer-badge {
+      font-size: 10px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.75);
+      letter-spacing: 0.3px;
+      font-variant-numeric: tabular-nums;
+    }
+    .camera-lens {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #1e2942 0%, #090d16 65%, #000 100%);
+      box-shadow: inset 0 0 2px rgba(100, 180, 255, 0.4);
+    }
+
+    /* Dialogue & Wisdom Speech Bubble */
+    #speech-bubble {
+      position: fixed;
+      z-index: 8;
+      max-width: 250px;
+      background: rgba(255, 255, 255, 0.97);
+      color: #0f1429;
+      padding: 10px 14px;
+      border-radius: 16px;
+      font-size: 12px;
+      line-height: 1.4;
+      font-weight: 600;
+      box-shadow: 0 12px 32px rgba(10, 14, 35, 0.35);
+      pointer-events: none;
+      opacity: 0;
+      transform: translate(-50%, -100%) scale(0.82);
+      transition:
+        opacity 0.25s ease,
+        transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    #speech-bubble.visible {
+      opacity: 1;
+      transform: translate(-50%, -100%) scale(1);
+    }
+    #speech-bubble .bubble-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 3px;
+    }
+    #speech-bubble .speaker-tag {
+      font-size: 9.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: #e01937;
+    }
+    #speech-bubble .category-tag {
+      font-size: 9px;
+      font-weight: 700;
+      background: rgba(0, 0, 0, 0.07);
+      padding: 1px 5px;
+      border-radius: 4px;
+      color: #475569;
+    }
+    #speech-bubble::after {
+      content: "";
+      position: absolute;
+      bottom: -5px;
+      left: 50%;
+      transform: translateX(-50%) rotate(45deg);
+      width: 11px;
+      height: 11px;
+      background: rgba(255, 255, 255, 0.97);
+    }
+
+    /* Glassmorphic Settings Dock */
+    #ui-dock {
+      position: absolute;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(94vw, 420px);
+      background: rgba(10, 13, 28, 0.8);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 22px;
+      padding: 14px 16px;
+      z-index: 10;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+      transition: transform 0.35s ease, opacity 0.25s ease;
+    }
+    #ui-dock.hidden {
+      transform: translate(-50%, calc(100% + 30px));
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #restore-ui-btn {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      z-index: 11;
+      background: rgba(10, 13, 28, 0.82);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      display: none;
+    }
+    #restore-ui-btn.show { display: block; }
+
+    .dock-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 9px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .pill-btn {
+      background: rgba(255, 255, 255, 0.11);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      border-radius: 99px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .pill-btn.active-toggle {
+      background: rgba(16, 185, 129, 0.25);
+      border-color: #10b981;
+      color: #6ee7b7;
+    }
+
+    .chip-row {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 8px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+    .chip-row::-webkit-scrollbar { display: none; }
+    .chip {
+      flex: 1;
+      white-space: nowrap;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: rgba(255, 255, 255, 0.8);
+      padding: 5px 7px;
+      border-radius: 9px;
+      font-size: 10.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+    .chip.selected {
+      background: #e01937;
+      border-color: #ff4d6a;
+      color: #ffffff;
+    }
+
+    .slider-group {
+      margin-bottom: 7px;
+    }
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.82);
+      margin-bottom: 3px;
+      font-weight: 600;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.18);
+      border-radius: 99px;
+      outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      background: #ffffff;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+      cursor: pointer;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-top: 7px;
+    }
+    .act-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.13);
+      color: #fff;
+      padding: 7px 4px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .act-btn.accent {
+      background: #e01937;
+      border-color: transparent;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Status Bar -->
+  <div class="status-bar">
+    <span id="clock">2:32</span>
+    <div class="signal-bars">
+      <span></span><span></span><span></span><span></span>
+    </div>
+  </div>
+
+  <!-- Interactive Punch Hole / Dynamic Island -->
+  <div id="cutout-wrapper">
+    <div id="punch-hole" title="Tap to Deploy or Retract">
+      <span id="timer-badge">LIVE</span>
+      <div class="camera-lens"></div>
+    </div>
+  </div>
+
+  <!-- Dialogue & Wisdom Speech Bubble -->
+  <div id="speech-bubble">
+    <div class="bubble-header">
+      <span class="speaker-tag" id="bubble-speaker">SHINOBI</span>
+      <span class="category-tag" id="bubble-cat">Motivation</span>
+    </div>
+    <span id="bubble-text">Let's conquer your goals today!</span>
+  </div>
+
+  <canvas id="scene"></canvas>
+  <button id="restore-ui-btn">Settings</button>
+
+  <!-- Settings & Control Dock -->
+  <div id="ui-dock">
+    <div class="dock-top">
+      <span>Companion & Wisdom Library</span>
+      <div style="display:flex; gap:5px;">
+        <button class="pill-btn active-toggle" id="fall-toggle-btn">Fall: ON</button>
+        <button class="pill-btn" id="shape-btn">Island</button>
+        <button class="pill-btn" id="hide-btn">Hide</button>
+      </div>
+    </div>
+
+    <!-- Character Selector -->
+    <div class="slider-header"><span>Active Friend (Auto-Rotates)</span></div>
+    <div class="chip-row" id="char-chips">
+      <div class="chip selected" data-char="rotate">🔄 Rotate All</div>
+      <div class="chip" data-char="0">🥷 Ninja</div>
+      <div class="chip" data-char="1">🐱 Neko Cat</div>
+      <div class="chip" data-char="2">🤖 Bibi Bot</div>
+      <div class="chip" data-char="3">🦊 Kitsune</div>
+    </div>
+
+    <!-- Auto-Visit Timer -->
+    <div class="slider-header">
+      <span>Visit Frequency</span>
+      <span id="next-visit-label" style="color:#6ee7b7;">Every 2m</span>
+    </div>
+    <div class="chip-row" id="timer-chips">
+      <div class="chip" data-sec="0">Always Out</div>
+      <div class="chip" data-sec="30">30s (Test)</div>
+      <div class="chip" data-sec="60">1 Min</div>
+      <div class="chip selected" data-sec="120">2 Min</div>
+      <div class="chip" data-sec="180">3 Min</div>
+      <div class="chip" data-sec="300">5 Min</div>
+    </div>
+
+    <!-- Sliders -->
+    <div class="slider-group">
+      <div class="slider-header"><span>Rope Drop Depth</span><span id="rope-label">42%</span></div>
+      <input type="range" id="rope-slider" min="20" max="74" value="42" />
+    </div>
+
+    <div class="slider-group">
+      <div class="slider-header"><span>Phone Tilt (Balance & Fall)</span><span id="tilt-label">0° (Balanced)</span></div>
+      <input type="range" id="tilt-slider" min="-40" max="40" value="0" />
+    </div>
+
+    <!-- Actions -->
+    <div class="actions">
+      <button class="act-btn accent" id="toggle-btn">In / Out</button>
+      <button class="act-btn" id="teach-btn">Teach Me 🧠</button>
+      <button class="act-btn" id="motivate-btn">Motivate 🔥</button>
+      <button class="act-btn" id="gyro-btn">Gyro ON</button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('scene');
+    const ctx = canvas.getContext('2d');
+    const punchHole = document.getElementById('punch-hole');
+    const timerBadge = document.getElementById('timer-badge');
+    const speechBubble = document.getElementById('speech-bubble');
+    const bubbleSpeaker = document.getElementById('bubble-speaker');
+    const bubbleCat = document.getElementById('bubble-cat');
+    const bubbleText = document.getElementById('bubble-text');
+    const ropeSlider = document.getElementById('rope-slider');
+    const ropeLabel = document.getElementById('rope-label');
+    const tiltSlider = document.getElementById('tilt-slider');
+    const tiltLabel = document.getElementById('tilt-label');
+    const fallToggleBtn = document.getElementById('fall-toggle-btn');
+    const nextVisitLabel = document.getElementById('next-visit-label');
+
+    if (window.location.search.includes('overlay=1')) {
+      document.body.classList.add('transparent-overlay');
+    }
+
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    let dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    let anchorX = width / 2;
+    let anchorY = 28;
+
+    function resize() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      anchorX = width / 2;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // === BIG KNOWLEDGE LIBRARY: MAXIMS, BIASES, TRICKS & MOTIVATION ===
+    const KNOWLEDGE_LIBRARY = {
+      motivation: [
+        "Focus on the next micro-step. Momentum builds action! ⚡",
+        "Discipline is choosing between what you want now and what you want most.",
+        "Your future self is depending on the work you put in today.",
+        "Action cures anxiety. Dive into your task for just 5 minutes!",
+        "Take a deep breath. You are far more capable than you realize."
+      ],
+      timeCheck: [
+        function() {
+          const now = new Date();
+          const h = now.getHours();
+          const m = String(now.getMinutes()).padStart(2, '0');
+          if (h < 12) return `It's ${h}:${m} AM. Perfect morning focus time! Let's get things done! ☀️`;
+          if (h < 17) return `It's ${h}:${m} PM. Afternoon power hours! Keep your energy high! 🚀`;
+          return `It's ${h}:${m} PM. Great job today—wind down or finish strong! 🌙`;
+        }
+      ],
+      workCheck: [
+        "Time for a deep work sprint! Put your phone face down and crush it for 25 minutes. 💻",
+        "Stand up, stretch your legs, and get back to your mission with fresh eyes! 🌟",
+        "Break your big project into three tiny tasks. Which one starts right now?"
+      ],
+      psychologyTricks: [
+        { title: "Benjamin Franklin Effect", text: "Want someone to like you? Ask them for a small favor. Psychologically, our brains justify helping them by deciding we like them." },
+        { title: "Foot-in-the-Door Technique", text: "To achieve a massive goal, agree to a tiny request first. Compliance snowballs naturally." },
+        { title: "The Zeigarnik Effect", text: "Your brain remembers unfinished tasks better than completed ones. Simply starting a task silences procrastination!" },
+        { title: "The 2-Minute Rule", text: "If a task takes less than 2 minutes to do, do it immediately. It eliminates mental clutter." },
+        { title: "Social Proof", text: "We look to others to determine correct behavior. Surround yourself with driven people to elevate your output." }
+      ],
+      cognitiveBiases: [
+        { title: "Dunning-Kruger Effect", text: "Beginners often overestimate their knowledge, while experts underestimate theirs. Stay curious and humble!" },
+        { title: "Confirmation Bias", text: "We naturally seek information that supports our existing beliefs. Actively test your assumptions!" },
+        { title: "Loss Aversion", text: "Losing $100 hurts twice as much as gaining $100 feels good. Don't let fear of failure paralyze your risks." },
+        { title: "Anchoring Bias", text: "We rely too heavily on the first piece of information we encounter. Question your baseline assumptions." },
+        { title: "Sunk Cost Fallacy", text: "Continuing a task just because you invested time in it, even when quitting is smarter. Cut your losses!" }
+      ],
+      universalMaxims: [
+        { title: "Marcus Aurelius (Stoicism)", text: "'The impediment to action advances action. What stands in the way becomes the way.'" },
+        { title: "Seneca (Time)", text: "'It is not that we have a short time to live, but that we waste a lot of it.'" },
+        { title: "Aristotle (Excellence)", text: "'We are what we repeatedly do. Excellence, then, is not an act, but a habit.'" },
+        { title: "Carl Jung (Awareness)", text: "'Until you make the unconscious conscious, it will direct your life and you will call it fate.'" }
+      ]
+    };
+
+    const CHARACTERS = [
+      { id: 'ninja', name: 'Shinobi', color: '#e01937' },
+      { id: 'cat', name: 'Kuro Neko', color: '#f59e0b' },
+      { id: 'bot', name: 'Bibi Bot', color: '#06b6d4' },
+      { id: 'fox', name: 'Kitsune', color: '#f97316' }
+    ];
+
+    let charMode = 'rotate';
+    let activeCharIdx = 0;
+    let visitIntervalSec = 120;
+    let visitCountdown = 120;
+    let hangOutTimer = 22;
+    let fallAnimationEnabled = true;
+
+    let state = 'DROP_ROPE';
+    let targetRopeRatio = 0.42;
+    let ropeExtend = 0.0, ropeExtendVel = 0.0;
+    let slidePos = 0.0, slideVel = 0.0;
+
+    let ropeAngle = 0.0, ropeAngVel = 0.0;
+    let ropeStretch = 0.0, ropeStretchVel = 0.0;
+    let midRopeBow = 0.0;
+    let tasselAngle = 0.0, tasselAngVel = 0.0;
+
+    let phoneTiltDeg = 0, smoothTiltRad = 0;
+    let slipBlend = 0, wasSlipping = false;
+    let legSwingAngle = 0, legSwingVel = 0;
+    let landingSquash = 0, landingSquashVel = 0;
+
+    let time = 0;
+    let blinkTimer = 90, blinkAmount = 0;
+    let gazeX = 0, targetGazeX = 0, gazeTimer = 110;
+    const RIBBON_LEN = 8;
+    let ribbonNodes = Array.from({ length: RIBBON_LEN }, () => ({ x: 0, y: 0 }));
+
+    // Intelligent Speech & Wisdom Router
+    let bubbleTimeout = null;
+    function speakWisdom(category = 'random') {
+      if (state === 'INSIDE' || state === 'RETRACT_ROPE') return;
+      const char = CHARACTERS[activeCharIdx];
+      let catName = "Motivation";
+      let text = "";
+
+      if (category === 'random') {
+        const types = ['motivation', 'time', 'work', 'trick', 'bias', 'maxim'];
+        category = types[Math.floor(Math.random() * types.length)];
+      }
+
+      if (category === 'motivation') {
+        catName = "Motivation 🔥";
+        const arr = KNOWLEDGE_LIBRARY.motivation;
+        text = arr[Math.floor(Math.random() * arr.length)];
+      } else if (category === 'time') {
+        catName = "Clock ⏰";
+        const fn = KNOWLEDGE_LIBRARY.timeCheck[0];
+        text = fn();
+      } else if (category === 'work') {
+        catName = "Work Hard 💼";
+        const arr = KNOWLEDGE_LIBRARY.workCheck;
+        text = arr[Math.floor(Math.random() * arr.length)];
+      } else if (category === 'trick') {
+        catName = "Psych Trick 🧠";
+        const item = KNOWLEDGE_LIBRARY.psychologyTricks[Math.floor(Math.random() * KNOWLEDGE_LIBRARY.psychologyTricks.length)];
+        text = `<b>${item.title}:</b> ${item.text}`;
+      } else if (category === 'bias') {
+        catName = "Cognitive Bias 📐";
+        const item = KNOWLEDGE_LIBRARY.cognitiveBiases[Math.floor(Math.random() * KNOWLEDGE_LIBRARY.cognitiveBiases.length)];
+        text = `<b>${item.title}:</b> ${item.text}`;
+      } else if (category === 'maxim') {
+        catName = "Universal Maxim 🏛️";
+        const item = KNOWLEDGE_LIBRARY.universalMaxims[Math.floor(Math.random() * KNOWLEDGE_LIBRARY.universalMaxims.length)];
+        text = `<b>${item.title}:</b> ${item.text}`;
+      }
+
+      bubbleSpeaker.textContent = char.name;
+      bubbleSpeaker.style.color = char.color;
+      bubbleCat.textContent = catName;
+      bubbleText.innerHTML = text;
+      speechBubble.classList.add('visible');
+
+      clearTimeout(bubbleTimeout);
+      bubbleTimeout = setTimeout(() => {
+        speechBubble.classList.remove('visible');
+      }, 5500);
+    }
+
+    function animateCutout(expand) {
+      punchHole.style.transform = expand ? 'scaleX(1.12) scaleY(1.06)' : 'scale(0.94)';
+      setTimeout(() => { punchHole.style.transform = 'scale(1)'; }, 240);
+    }
+
+    function selectNextCharacter() {
+      if (charMode === 'rotate') {
+        activeCharIdx = (activeCharIdx + 1) % CHARACTERS.length;
+      } else {
+        activeCharIdx = Number(charMode);
+      }
+    }
+
+    function deployCompanion(advance = false) {
+      if (advance) selectNextCharacter();
+      state = 'DROP_ROPE';
+      ropeExtend = 0.02;
+      ropeExtendVel = 0.035;
+      slidePos = 0.0;
+      slideVel = 0.0;
+      hangOutTimer = 22;
+      animateCutout(true);
+    }
+
+    function retractCompanion() {
+      speechBubble.classList.remove('visible');
+      state = 'CLIMB_UP';
+      slideVel = 0.0;
+      visitCountdown = visitIntervalSec;
+    }
+
+    function toggleCompanion() {
+      if (state === 'INSIDE' || state === 'RETRACT_ROPE') {
+        deployCompanion(true);
+      } else {
+        retractCompanion();
+      }
+    }
+
+    punchHole.addEventListener('click', toggleCompanion);
+    document.getElementById('toggle-btn').addEventListener('click', toggleCompanion);
+
+    // Teach Me Button (Cycles through Psych Tricks, Biases, Maxims)
+    document.getElementById('teach-btn').addEventListener('click', () => {
+      if (state === 'INSIDE') {
+        deployCompanion(false);
+        setTimeout(() => speakWisdom('trick'), 1200);
+      } else {
+        landingSquashVel = 2.0;
+        const categories = ['trick', 'bias', 'maxim'];
+        const chosen = categories[Math.floor(Math.random() * categories.length)];
+        speakWisdom(chosen);
+      }
+    });
+
+    // Motivate Button (Cycles through Motivation, Time, Work Check)
+    document.getElementById('motivate-btn').addEventListener('click', () => {
+      if (state === 'INSIDE') {
+        deployCompanion(false);
+        setTimeout(() => speakWisdom('motivation'), 1200);
+      } else {
+        landingSquashVel = 2.0;
+        const categories = ['motivation', 'time', 'work'];
+        const chosen = categories[Math.floor(Math.random() * categories.length)];
+        speakWisdom(chosen);
+      }
+    });
+
+    fallToggleBtn.addEventListener('click', () => {
+      fallAnimationEnabled = !fallAnimationEnabled;
+      fallToggleBtn.textContent = fallAnimationEnabled ? 'Fall: ON' : 'Fall: OFF';
+      fallToggleBtn.classList.toggle('active-toggle', fallAnimationEnabled);
+    });
+
+    document.querySelectorAll('#char-chips .chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('#char-chips .chip').forEach(c => c.classList.remove('selected'));
+        chip.classList.add('selected');
+        const val = chip.getAttribute('data-char');
+        charMode = val;
+        if (val !== 'rotate') {
+          activeCharIdx = Number(val);
+          if (state === 'PERCHED') speakWisdom('motivation');
+          else if (state === 'INSIDE') deployCompanion(false);
+        }
+      });
+    });
+
+    document.querySelectorAll('#timer-chips .chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('#timer-chips .chip').forEach(c => c.classList.remove('selected'));
+        chip.classList.add('selected');
+        visitIntervalSec = Number(chip.getAttribute('data-sec'));
+        visitCountdown = visitIntervalSec;
+        if (visitIntervalSec === 0) {
+          nextVisitLabel.textContent = 'Always Out';
+          timerBadge.textContent = 'LIVE';
+          if (state === 'INSIDE') deployCompanion(false);
+        } else {
+          const mins = visitIntervalSec >= 60 ? `${visitIntervalSec / 60}m` : `${visitIntervalSec}s`;
+          nextVisitLabel.textContent = `Every ${mins}`;
+        }
+      });
+    });
+
+    // Scheduler Interval
+    setInterval(() => {
+      if (visitIntervalSec <= 0) {
+        timerBadge.textContent = 'LIVE';
+        return;
+      }
+      if (state === 'PERCHED') {
+        hangOutTimer--;
+        timerBadge.textContent = `${hangOutTimer}s`;
+        if (hangOutTimer === 4) {
+          speakWisdom('time');
+        }
+        if (hangOutTimer <= 0) {
+          retractCompanion();
+        }
+      } else if (state === 'INSIDE') {
+        visitCountdown--;
+        const m = Math.floor(visitCountdown / 60);
+        const s = String(visitCountdown % 60).padStart(2, '0');
+        timerBadge.textContent = `${m}:${s}`;
+        if (visitCountdown <= 0) {
+          visitCountdown = visitIntervalSec;
+          deployCompanion(true);
+          setTimeout(() => speakWisdom('random'), 1200);
+        }
+      }
+    }, 1000);
+
+    const shapeBtn = document.getElementById('shape-btn');
+    shapeBtn.addEventListener('click', () => {
+      punchHole.classList.toggle('circle-mode');
+      shapeBtn.textContent = punchHole.classList.contains('circle-mode') ? 'Hole' : 'Island';
+    });
+
+    const uiDock = document.getElementById('ui-dock');
+    const restoreBtn = document.getElementById('restore-ui-btn');
+    document.getElementById('hide-btn').addEventListener('click', () => {
+      uiDock.classList.add('hidden');
+      restoreBtn.classList.add('show');
+    });
+    restoreBtn.addEventListener('click', () => {
+      uiDock.classList.remove('hidden');
+      restoreBtn.classList.remove('show');
+    });
+
+    ropeSlider.addEventListener('input', (e) => {
+      targetRopeRatio = Number(e.target.value) / 100;
+      ropeLabel.textContent = `${e.target.value}%`;
+      if (state === 'INSIDE') deployCompanion(false);
+    });
+
+    tiltSlider.addEventListener('input', (e) => {
+      phoneTiltDeg = Number(e.target.value);
+      tiltLabel.textContent = `${Math.round(phoneTiltDeg)}°`;
+    });
+
+    const gyroBtn = document.getElementById('gyro-btn');
+    function onDeviceOrientation(e) {
+      if (e.gamma !== null) {
+        phoneTiltDeg = Math.max(-40, Math.min(40, e.gamma));
+        tiltSlider.value = Math.round(phoneTiltDeg);
+        tiltLabel.textContent = `${Math.round(phoneTiltDeg)}°`;
+      }
+    }
+    gyroBtn.addEventListener('click', async () => {
+      if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        try {
+          const res = await DeviceOrientationEvent.requestPermission();
+          if (res === 'granted') {
+            window.addEventListener('deviceorientation', onDeviceOrientation);
+            gyroBtn.textContent = 'Gyro: ON';
+          }
+        } catch (_) {}
+      } else {
+        window.addEventListener('deviceorientation', onDeviceOrientation);
+        gyroBtn.textContent = 'Gyro: ON';
+      }
+    });
+
+    canvas.addEventListener('pointerdown', (e) => {
+      if (state !== 'PERCHED') return;
+      const totalLen = height * targetRopeRatio * ropeExtend + ropeStretch;
+      const knotX = anchorX + Math.sin(ropeAngle) * totalLen;
+      const knotY = anchorY + Math.cos(ropeAngle) * totalLen;
+      if (Math.hypot(e.clientX - knotX, e.clientY - (knotY - 30)) < 68) {
+        landingSquashVel = 2.0;
+        speakWisdom('random');
+      }
+    });
+
+    // === PHYSICS UPDATE ===
+    function updatePhysics() {
+      time += 0.016;
+
+      if (state === 'DROP_ROPE') {
+        ropeExtendVel += 0.0045;
+        ropeExtend += ropeExtendVel;
+        if (ropeExtend >= 1.0) {
+          ropeExtend = 1.0;
+          ropeExtendVel = 0;
+          ropeStretchVel = 2.6;
+          state = 'SLIDE_DOWN';
+          slidePos = 0.04;
+          slideVel = 0.024;
+        }
+      } else if (state === 'SLIDE_DOWN') {
+        const rem = 1.0 - slidePos;
+        slideVel = Math.min(0.052, slideVel + 0.003);
+        slidePos += Math.min(slideVel, rem * 0.22 + 0.008);
+        if (slidePos >= 0.995) {
+          slidePos = 1.0;
+          state = 'PERCHED';
+          landingSquashVel = 3.5;
+          ropeStretchVel = 4.0;
+          ropeAngVel += 0.013;
+          setTimeout(() => { if (state === 'PERCHED') speakWisdom('motivation'); }, 400);
+        }
+      } else if (state === 'CLIMB_UP') {
+        slidePos -= 0.028;
+        ropeAngVel *= 0.9;
+        if (slidePos <= 0.02) {
+          slidePos = 0.0;
+          state = 'RETRACT_ROPE';
+          animateCutout(false);
+        }
+      } else if (state === 'RETRACT_ROPE') {
+        ropeExtend -= 0.085;
+        ropeAngle *= 0.8;
+        if (ropeExtend <= 0.0) {
+          ropeExtend = 0.0;
+          state = 'INSIDE';
+        }
+      }
+
+      if (state === 'INSIDE') return;
+
+      const targetTiltRad = (phoneTiltDeg * Math.PI) / 180;
+      smoothTiltRad += (targetTiltRad - smoothTiltRad) * 0.08;
+
+      const breeze = Math.sin(time * 1.3) * 0.00016;
+      const effectiveTargetAngle = smoothTiltRad * 0.36;
+      ropeAngVel += (-0.026 * (ropeAngle - effectiveTargetAngle) + breeze);
+      ropeAngVel *= 0.935;
+      ropeAngle += ropeAngVel;
+      ropeAngle = Math.max(-0.30, Math.min(0.30, ropeAngle));
+
+      midRopeBow += (-ropeAngVel * 135 - midRopeBow) * 0.18;
+
+      const tasselAccel = -0.04 * (tasselAngle - smoothTiltRad * 0.5) - ropeAngVel * 0.35;
+      tasselAngVel = (tasselAngVel + tasselAccel) * 0.90;
+      tasselAngle += tasselAngVel;
+
+      ropeStretchVel += -0.18 * ropeStretch - 0.22 * ropeStretchVel;
+      ropeStretch += ropeStretchVel;
+
+      landingSquashVel += -0.22 * landingSquash - 0.25 * landingSquashVel;
+      landingSquash = Math.max(-3, Math.min(14, landingSquash + landingSquashVel));
+
+      const shouldSlip = fallAnimationEnabled && state === 'PERCHED' && Math.abs(phoneTiltDeg) >= 20;
+      if (shouldSlip && !wasSlipping) {
+        ropeStretchVel += 4.5;
+        ropeAngVel += (phoneTiltDeg > 0 ? 0.01 : -0.01);
+      }
+      wasSlipping = shouldSlip;
+
+      slipBlend += ((shouldSlip ? 1.0 : 0.0) - slipBlend) * 0.085;
+
+      const gravityLegTarget = smoothTiltRad * 0.55 + Math.sin(time * 3.8) * 0.16;
+      legSwingVel = (legSwingVel + (-0.045 * (legSwingAngle - gravityLegTarget) - ropeAngVel * 1.4)) * 0.91;
+      legSwingAngle += legSwingVel;
+
+      if (--blinkTimer <= 0) {
+        blinkAmount = Math.min(1, blinkAmount + 0.35);
+        if (blinkTimer < -5) blinkTimer = 110 + Math.random() * 140;
+      } else {
+        blinkAmount = Math.max(0, blinkAmount - 0.35);
+      }
+
+      if (--gazeTimer <= 0) {
+        targetGazeX = (Math.random() - 0.5) * 3.0;
+        gazeTimer = 90 + Math.random() * 120;
+      }
+      gazeX += (targetGazeX - gazeX) * 0.12;
+    }
+
+    // === RENDERERS ===
+    function drawBraidedRopeAndKnot(ax, ay, mx, my, kx, ky) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(ax + 2, ay + 2);
+      ctx.quadraticCurveTo(mx + 2, my + 2, kx + 2, ky + 2);
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.28)';
+      ctx.lineWidth = 5.5;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(ax, ay);
+      ctx.quadraticCurveTo(mx, my, kx, ky);
+      ctx.strokeStyle = '#141722';
+      ctx.lineWidth = 4.6;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+
+      const ropeLen = Math.hypot(kx - ax, ky - ay);
+      const steps = Math.max(8, Math.floor(ropeLen / 7));
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
+      ctx.lineWidth = 1.3;
+      for (let i = 1; i < steps; i++) {
+        const t = i / steps, inv = 1 - t;
+        const px = inv * inv * ax + 2 * inv * t * mx + t * t * kx;
+        const py = inv * inv * ay + 2 * inv * t * my + t * t * ky;
+        ctx.beginPath(); ctx.moveTo(px - 1.6, py - 1.5); ctx.lineTo(px + 1.6, py + 1.5); ctx.stroke();
+      }
+
+      ctx.translate(kx, ky);
+      ctx.rotate(-ropeAngle);
+
+      const goldGrad = ctx.createLinearGradient(-5, 0, 5, 0);
+      goldGrad.addColorStop(0, '#b45309'); goldGrad.addColorStop(0.5, '#fde047'); goldGrad.addColorStop(1, '#92400e');
+      ctx.fillStyle = goldGrad;
+      ctx.beginPath(); ctx.roundRect(-4.8, -5, 9.6, 4.5, 2); ctx.fill();
+
+      ctx.fillStyle = '#be123c';
+      ctx.beginPath();
+      ctx.arc(-4.2, 2.5, 4.0, 0, Math.PI * 2);
+      ctx.arc(4.2, 2.5, 4.0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#e11d48';
+      ctx.beginPath(); ctx.roundRect(-4.5, -1, 9.0, 7.5, 3.2); ctx.fill();
+
+      ctx.fillStyle = goldGrad;
+      ctx.beginPath(); ctx.roundRect(-3.8, 6.2, 7.6, 3.0, 1.5); ctx.fill();
+
+      ctx.save();
+      ctx.translate(0, 8.5);
+      ctx.rotate(tasselAngle * 0.7);
+      const colors = ['#9f1239', '#e11d48', '#fb7185', '#e11d48', '#9f1239'];
+      for (let s = -2; s <= 2; s++) {
+        const spread = s * 1.9, wave = Math.sin(time * 4.5 + s) * 1.4;
+        ctx.strokeStyle = colors[s + 2]; ctx.lineWidth = 1.5; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(s * 0.8, 0); ctx.quadraticCurveTo(spread * 0.7 + wave * 0.5, 11, spread + wave, 21); ctx.stroke();
+      }
+      ctx.restore();
+      ctx.restore();
+    }
+
+    function drawSculptedLimb(x1, y1, x2, y2, x3, y3, wStart, wMid, wEnd, color) {
+      ctx.save();
+      ctx.fillStyle = color;
+      drawTaperedSegment(x1, y1, x2, y2, wStart, wMid);
+      ctx.beginPath(); ctx.arc(x2, y2, wMid * 0.5, 0, Math.PI * 2); ctx.fill();
+      drawTaperedSegment(x2, y2, x3, y3, wMid * 1.04, wEnd);
+      ctx.restore();
+    }
+
+    function drawTaperedSegment(x1, y1, x2, y2, w1, w2) {
+      const dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy) || 1;
+      const nx = -dy / len, ny = dx / len;
+      const mx = (x1 + x2) * 0.5 + nx * (w1 - w2) * 0.12;
+      const my = (y1 + y2) * 0.5 + ny * (w1 - w2) * 0.12;
+      const mw = (w1 + w2) * 0.54;
+      ctx.beginPath();
+      ctx.moveTo(x1 + nx * w1 * 0.5, y1 + ny * w1 * 0.5);
+      ctx.quadraticCurveTo(mx + nx * mw * 0.5, my + ny * mw * 0.5, x2 + nx * w2 * 0.5, y2 + ny * w2 * 0.5);
+      ctx.lineTo(x2 - nx * w2 * 0.5, y2 - ny * w2 * 0.5);
+      ctx.quadraticCurveTo(mx - nx * mw * 0.5, my - ny * mw * 0.5, x1 - nx * w1 * 0.5, y1 - ny * w1 * 0.5);
+      ctx.closePath(); ctx.fill();
+    }
+
+    function drawNinjaFoot(ax, ay, tx, ty, color) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(ax - 3.5, ay); ctx.lineTo(ax + 3.5, ay - 2);
+      ctx.quadraticCurveTo((ax + tx) * 0.5 + 2, (ay + ty) * 0.5 - 3, tx, ty);
+      ctx.quadraticCurveTo((ax + tx) * 0.5, ty + 3.5, ax - 4, ay + 3.5);
+      ctx.closePath(); ctx.fill();
+    }
+
+    function drawCharacterTorso(charId, hipX, hipY, shoulderX, shoulderY) {
+      const dx = shoulderX - hipX, dy = shoulderY - hipY, angle = Math.atan2(dy, dx), tLen = Math.hypot(dx, dy);
+      ctx.save(); ctx.translate(hipX, hipY); ctx.rotate(angle + Math.PI / 2);
+
+      if (charId === 'ninja') {
+        ctx.save(); ctx.translate(-4, -tLen * 0.65); ctx.rotate(-0.48);
+        ctx.fillStyle = '#141722'; ctx.fillRect(-2.2, -22, 4.4, 34);
+        ctx.fillStyle = '#fbbf24'; ctx.fillRect(-4.5, -10, 9, 2.2);
+        ctx.fillStyle = '#e11d48'; ctx.fillRect(-1.2, -19, 2.4, 2.4); ctx.fillRect(-1.2, -15, 2.4, 2.4);
+        ctx.restore();
+      } else if (charId === 'cat') {
+        const tailWave = Math.sin(time * 3.6) * 8;
+        ctx.strokeStyle = '#11131c'; ctx.lineWidth = 5.2; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(-4, -2); ctx.bezierCurveTo(-22, -4 + tailWave * 0.5, -28, -22 + tailWave, -16, -28 + tailWave); ctx.stroke();
+      } else if (charId === 'fox') {
+        const tailSway = Math.sin(time * 3.0) * 6;
+        ctx.save(); ctx.translate(-5, -3); ctx.rotate(-0.35 + tailSway * 0.02);
+        ctx.fillStyle = '#ea580c'; ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(-18, -14, -26, -4); ctx.quadraticCurveTo(-34, 4, -20, 11); ctx.quadraticCurveTo(-8, 9, 0, 0); ctx.fill();
+        ctx.fillStyle = '#fffbeb'; ctx.beginPath(); ctx.arc(-24, 2, 6.5, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      }
+
+      ctx.fillStyle = charId === 'bot' ? '#f8fafc' : (charId === 'fox' ? '#c2410c' : '#090b10');
+      ctx.beginPath();
+      ctx.moveTo(-6.5, 2); ctx.quadraticCurveTo(-8.5, -tLen * 0.5, -9.5, -tLen + 2);
+      ctx.quadraticCurveTo(0, -tLen - 4, 8.5, -tLen + 2); ctx.quadraticCurveTo(7.5, -tLen * 0.45, 5.5, 2);
+      ctx.quadraticCurveTo(0, 6, -6.5, 2); ctx.closePath(); ctx.fill();
+
+      if (charId === 'bot') {
+        ctx.fillStyle = '#06b6d4'; ctx.shadowColor = '#06b6d4'; ctx.shadowBlur = 6;
+        ctx.beginPath(); ctx.arc(1.5, -tLen * 0.52, 3.2, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+      } else if (charId === 'cat') {
+        ctx.fillStyle = '#e11d48'; ctx.fillRect(-7, -tLen + 1, 14, 3.5);
+        ctx.fillStyle = '#facc15'; ctx.beginPath(); ctx.arc(2.5, -tLen + 3.5, 3.4, 0, Math.PI * 2); ctx.fill();
+      } else {
+        ctx.fillStyle = charId === 'fox' ? '#fbbf24' : '#e11d48';
+        ctx.beginPath(); ctx.roundRect(-6.8, -4, 13.0, 4.2, 2); ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawCharacterHead(charId, hx, hy, headTilt, isSlipping) {
+      ctx.save(); ctx.translate(hx, hy); ctx.rotate(headTilt);
+      const ex = 2.8 + gazeX * 0.6, ey = 2.0, eyeOpen = 1.0 - blinkAmount;
+
+      if (charId === 'ninja') {
+        ctx.fillStyle = '#090b10'; ctx.fillRect(-3.8, 8, 7.6, 8);
+        ctx.beginPath(); ctx.arc(0, 0, 12.8, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(-10, -7); ctx.lineTo(-15, -11); ctx.lineTo(-7, -11); ctx.lineTo(-11, -15); ctx.lineTo(-2, -12.5); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#e11d48'; ctx.beginPath(); ctx.moveTo(-12.6, -4.5); ctx.quadraticCurveTo(1, -6.5, 12.6, -3.5); ctx.lineTo(12.8, 1.2); ctx.quadraticCurveTo(1, -1.5, -12.8, 0.5); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#ffffff'; ctx.shadowColor = '#ffffff'; ctx.shadowBlur = 6;
+        if (isSlipping) {
+          ctx.beginPath(); ctx.ellipse(ex - 3.8, ey, 2.3, 3.0 * eyeOpen, 0, 0, Math.PI * 2); ctx.ellipse(ex + 3.8, ey, 2.3, 3.0 * eyeOpen, 0, 0, Math.PI * 2); ctx.fill();
+        } else {
+          drawSlantedEye(ex - 3.8, ey, 4.6, 2.7 * eyeOpen, 0.16); drawSlantedEye(ex + 3.8, ey, 4.4, 2.7 * eyeOpen, -0.12);
+        }
+        ctx.shadowBlur = 0;
+      } else if (charId === 'cat') {
+        const earTwitch = Math.sin(time * 5.5) * 0.8;
+        ctx.fillStyle = '#090b10';
+        ctx.beginPath(); ctx.moveTo(-11, -5); ctx.lineTo(-13, -19 + earTwitch); ctx.lineTo(-2, -11); ctx.closePath(); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(2, -11); ctx.lineTo(12, -19 - earTwitch); ctx.lineTo(11, -5); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#fb7185';
+        ctx.beginPath(); ctx.moveTo(-9.5, -7); ctx.lineTo(-11, -15 + earTwitch); ctx.lineTo(-4, -10); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(4, -10); ctx.lineTo(10, -15 - earTwitch); ctx.lineTo(9.5, -7); ctx.fill();
+        ctx.fillStyle = '#090b10'; ctx.beginPath(); ctx.ellipse(0, 0, 13.5, 12.2, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fde047'; ctx.shadowColor = '#facc15'; ctx.shadowBlur = 5;
+        ctx.beginPath(); ctx.ellipse(ex - 4.2, ey, 3.2, 3.6 * eyeOpen, 0, 0, Math.PI * 2); ctx.ellipse(ex + 4.2, ey, 3.2, 3.6 * eyeOpen, 0, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+      } else if (charId === 'bot') {
+        const antBob = Math.sin(time * 6) * 1.5;
+        ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(antBob, -19); ctx.stroke();
+        ctx.fillStyle = '#06b6d4'; ctx.shadowColor = '#06b6d4'; ctx.shadowBlur = 8; ctx.beginPath(); ctx.arc(antBob, -20, 2.8, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+        ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.roundRect(-13.5, -12, 27, 23, 11); ctx.fill();
+        ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.roundRect(-10.5, -7.5, 22, 14.5, 7); ctx.fill();
+        ctx.fillStyle = '#22d3ee'; ctx.shadowColor = '#06b6d4'; ctx.shadowBlur = 6;
+        ctx.beginPath(); ctx.ellipse(ex - 4.0, ey - 0.5, 2.4, 3.0 * eyeOpen, 0, 0, Math.PI * 2); ctx.ellipse(ex + 4.0, ey - 0.5, 2.4, 3.0 * eyeOpen, 0, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+      } else if (charId === 'fox') {
+        ctx.fillStyle = '#ea580c';
+        ctx.beginPath(); ctx.moveTo(-11, -5); ctx.lineTo(-15, -21); ctx.lineTo(-2, -11); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(2, -11); ctx.lineTo(14, -21); ctx.lineTo(11, -5); ctx.fill();
+        ctx.fillStyle = '#fffbeb';
+        ctx.beginPath(); ctx.moveTo(-9, -7); ctx.lineTo(-12.5, -17); ctx.lineTo(-4, -10); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(4, -10); ctx.lineTo(11.5, -17); ctx.lineTo(9, -7); ctx.fill();
+        ctx.fillStyle = '#ea580c'; ctx.beginPath(); ctx.arc(0, 0, 12.8, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fffbeb'; ctx.beginPath(); ctx.ellipse(-6, 4.5, 6.5, 5.2, 0.2, 0, Math.PI * 2); ctx.ellipse(6, 4.5, 6.5, 5.2, -0.2, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fef08a'; ctx.shadowColor = '#f59e0b'; ctx.shadowBlur = 6;
+        drawSlantedEye(ex - 3.8, ey - 0.5, 4.5, 2.8 * eyeOpen, 0.15); drawSlantedEye(ex + 3.8, ey - 0.5, 4.5, 2.8 * eyeOpen, -0.15); ctx.shadowBlur = 0;
+      }
+      ctx.restore();
+    }
+
+    function drawSlantedEye(x, y, w, h, slant) {
+      ctx.save(); ctx.translate(x, y); ctx.rotate(slant);
+      ctx.beginPath(); ctx.moveTo(-w * 0.5, 0); ctx.quadraticCurveTo(0, -h, w * 0.5, -h * 0.2); ctx.quadraticCurveTo(0, h * 0.85, -w * 0.5, 0); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+
+    function drawFlowingHeadband(knotX, knotY, charVelX) {
+      ribbonNodes[0].x = knotX; ribbonNodes[0].y = knotY;
+      const windX = -5.2 - charVelX * 0.8, slideUpdraft = state === 'SLIDE_DOWN' ? -3.8 : (state === 'CLIMB_UP' ? 3.2 : 0.6);
+      for (let i = 1; i < RIBBON_LEN; i++) {
+        const prev = ribbonNodes[i - 1], curr = ribbonNodes[i];
+        const wave = Math.sin(time * 6.5 - i * 0.85) * (1.2 + i * 0.35);
+        curr.x += (prev.x + windX - curr.x) * 0.45; curr.y += (prev.y + slideUpdraft + wave - curr.y) * 0.45;
+      }
+      drawTaperingRibbon(ribbonNodes, 5.5, 0.8, 2.2, '#9f1239');
+      drawTaperingRibbon(ribbonNodes, 7.0, -0.6, -1.5, '#e11d48');
+      ctx.fillStyle = '#be123c'; ctx.beginPath(); ctx.arc(knotX, knotY, 4.4, 0, Math.PI * 2); ctx.fill();
+    }
+
+    function drawTaperingRibbon(nodes, startWidth, yOffsetStart, yOffsetSpread, color) {
+      ctx.fillStyle = color; ctx.beginPath();
+      for (let i = 0; i < nodes.length; i++) {
+        const t = i / (nodes.length - 1), halfW = startWidth * (1 - t * 0.88) * 0.5;
+        const px = nodes[i].x, py = nodes[i].y + yOffsetStart + i * yOffsetSpread - halfW;
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      for (let i = nodes.length - 1; i >= 0; i--) {
+        const t = i / (nodes.length - 1), halfW = startWidth * (1 - t * 0.88) * 0.5;
+        const px = nodes[i].x, py = nodes[i].y + yOffsetStart + i * yOffsetSpread + halfW;
+        ctx.lineTo(px, py);
+      }
+      ctx.closePath(); ctx.fill();
+    }
+
+    // === RENDER LOOP ===
+    function render() {
+      ctx.clearRect(0, 0, width, height);
+      if (state === 'INSIDE') return;
+
+      const maxRopeLen = height * targetRopeRatio;
+      const currentRopeLen = maxRopeLen * ropeExtend + ropeStretch;
+      const sinA = Math.sin(ropeAngle), cosA = Math.cos(ropeAngle);
+      const knotX = anchorX + sinA * currentRopeLen;
+      const knotY = anchorY + cosA * currentRopeLen;
+      const midX = anchorX + sinA * (currentRopeLen * 0.5) + cosA * midRopeBow;
+      const midY = anchorY + cosA * (currentRopeLen * 0.5) - sinA * midRopeBow;
+
+      drawBraidedRopeAndKnot(anchorX, anchorY, midX, midY, knotX, knotY);
+
+      if (state === 'SLIDE_DOWN' || state === 'PERCHED' || state === 'CLIMB_UP') {
+        const char = CHARACTERS[activeCharIdx];
+        const t = slidePos, invT = 1 - t;
+        const charX = invT * invT * anchorX + 2 * invT * t * midX + t * t * knotX;
+        const charY = invT * invT * anchorY + 2 * invT * t * midY + t * t * knotY;
+
+        if (speechBubble.classList.contains('visible')) {
+          const clampedX = Math.max(130, Math.min(width - 130, charX));
+          speechBubble.style.left = `${clampedX}px`;
+          speechBubble.style.top = `${Math.max(75, charY - 82)}px`;
+        }
+
+        const breathe = Math.sin(time * 2.5) * 1.2;
+        const climbCycle = Math.sin(slidePos * 28);
+        const activeTilt = fallAnimationEnabled ? phoneTiltDeg : phoneTiltDeg * 0.25;
+        const balanceLean = Math.max(-1, Math.min(1, activeTilt / 20)) * 6.5;
+        const squash = landingSquash;
+        const climbArmOffset = state === 'CLIMB_UP' ? climbCycle * 9 : 0;
+        const climbLegOffset = state === 'CLIMB_UP' ? -climbCycle * 8 : 0;
+        const slideTuck = state === 'SLIDE_DOWN' ? -5 : 0;
+
+        const perchPose = {
+          hipX: -15 + balanceLean * 0.65, hipY: -20 + squash * 0.85 + breathe * 0.5,
+          shoulderX: -12 + balanceLean, shoulderY: -47 + squash * 0.55 + breathe,
+          headX: -9 + balanceLean * 1.1, headY: -61 + squash * 0.55 + breathe, headTilt: 0.08 + balanceLean * 0.018,
+          rElbowX: -4, rElbowY: -44 + squash * 0.3, rHandX: 0, rHandY: -52 - climbArmOffset,
+          lElbowX: (state === 'PERCHED') ? -24 + balanceLean * 0.5 : -6, lElbowY: (state === 'PERCHED') ? -33 + squash * 0.6 + breathe : -36,
+          lHandX: (state === 'PERCHED') ? -20 : 0, lHandY: (state === 'PERCHED') ? -18 + squash * 0.5 : -36 + climbArmOffset,
+          rKneeX: -5, rKneeY: -10 + squash * 0.4, rFootX: 0, rFootY: 2 + climbLegOffset,
+          lKneeX: -23, lKneeY: -15 + squash * 0.5 + slideTuck, lFootX: -1, lFootY: -6 + slideTuck - climbLegOffset
+        };
+
+        const tiltDir = phoneTiltDeg >= 0 ? 1 : -1;
+        const hipSway = Math.sin(legSwingAngle) * 14;
+        const kneeLag = Math.sin(legSwingAngle - 0.35) * 18;
+        const footLag = Math.sin(legSwingAngle - 0.7) * 24;
+        const scrambleKick = Math.sin(time * 8.0) * 4.5;
+        const handGrabEffort = Math.sin(time * 5.0) * 3.5;
+
+        const slipPose = {
+          hipX: hipSway, hipY: 27, shoulderX: hipSway * 0.45, shoulderY: -1,
+          headX: hipSway * 0.3 + tiltDir * 2, headY: -15, headTilt: -0.16 * tiltDir,
+          rElbowX: 3 * tiltDir + hipSway * 0.2, rElbowY: -13, rHandX: 0, rHandY: -25,
+          lElbowX: -9 + hipSway * 0.3, lElbowY: -5 + handGrabEffort * 0.5, lHandX: -2 + handGrabEffort * 0.4, lHandY: -17 + handGrabEffort,
+          rKneeX: kneeLag + 3, rKneeY: 43 - Math.abs(kneeLag) * 0.15, rFootX: footLag + 2 + scrambleKick, rFootY: 59 - Math.abs(footLag) * 0.2 + scrambleKick * 0.5,
+          lKneeX: kneeLag - 5, lKneeY: 40 - Math.abs(kneeLag) * 0.15, lFootX: footLag - 6 - scrambleKick, lFootY: 55 - Math.abs(footLag) * 0.2 - scrambleKick * 0.5
+        };
+
+        const b = slipBlend, lerp = (a, c) => a + (c - a) * b;
+        const p = {
+          hipX: lerp(perchPose.hipX, slipPose.hipX), hipY: lerp(perchPose.hipY, slipPose.hipY),
+          shoulderX: lerp(perchPose.shoulderX, slipPose.shoulderX), shoulderY: lerp(perchPose.shoulderY, slipPose.shoulderY),
+          headX: lerp(perchPose.headX, slipPose.headX), headY: lerp(perchPose.headY, slipPose.headY), headTilt: lerp(perchPose.headTilt, slipPose.headTilt),
+          rElbowX: lerp(perchPose.rElbowX, slipPose.rElbowX), rElbowY: lerp(perchPose.rElbowY, slipPose.rElbowY), rHandX: lerp(perchPose.rHandX, slipPose.rHandX), rHandY: lerp(perchPose.rHandY, slipPose.rHandY),
+          lElbowX: lerp(perchPose.lElbowX, slipPose.lElbowX), lElbowY: lerp(perchPose.lElbowY, slipPose.lElbowY), lHandX: lerp(perchPose.lHandX, slipPose.lHandX), lHandY: lerp(perchPose.lHandY, slipPose.lHandY),
+          rKneeX: lerp(perchPose.rKneeX, slipPose.rKneeX), rKneeY: lerp(perchPose.rKneeY, slipPose.rKneeY), rFootX: lerp(perchPose.rFootX, slipPose.rFootX), rFootY: lerp(perchPose.rFootY, slipPose.rFootY),
+          lKneeX: lerp(perchPose.lKneeX, slipPose.lKneeX), lKneeY: lerp(perchPose.lKneeY, slipPose.lKneeY), lFootX: lerp(perchPose.lFootX, slipPose.lFootX), lFootY: lerp(perchPose.lFootY, slipPose.lFootY)
+        };
+
+        const holeScale = Math.min(1, slidePos * 4.5);
+        const rotAngle = -ropeAngle * (1 - b * 0.5);
+        const limbColor = char.id === 'bot' ? '#cbd5e1' : (char.id === 'fox' ? '#9a3412' : '#090b10');
+
+        if (char.id === 'ninja' && holeScale > 0.35) {
+          const cosR = Math.cos(rotAngle), sinR = Math.sin(rotAngle);
+          const lx = p.headX - 11, ly = p.headY - 2;
+          drawFlowingHeadband(charX + (lx * cosR - ly * sinR) * holeScale, charY + (lx * sinR + ly * cosR) * holeScale, ropeAngVel * currentRopeLen);
+        }
+
+        ctx.save();
+        ctx.translate(charX, charY); ctx.scale(holeScale, holeScale); ctx.rotate(rotAngle);
+
+        drawSculptedLimb(p.shoulderX, p.shoulderY, p.rElbowX, p.rElbowY, p.rHandX, p.rHandY, 7.5, 6.2, 4.5, limbColor);
+        ctx.fillStyle = limbColor; ctx.beginPath(); ctx.arc(p.rHandX, p.rHandY, 4.2, 0, Math.PI * 2); ctx.fill();
+
+        drawSculptedLimb(p.hipX, p.hipY, p.rKneeX, p.rKneeY, p.rFootX, p.rFootY, 10.5, 7.8, 5.0, limbColor);
+        drawNinjaFoot(p.rFootX, p.rFootY, p.rFootX + 8, p.rFootY + 1, limbColor);
+
+        drawCharacterTorso(char.id, p.hipX, p.hipY, p.shoulderX, p.shoulderY);
+
+        drawSculptedLimb(p.hipX, p.hipY, p.lKneeX, p.lKneeY, p.lFootX, p.lFootY, 11.0, 8.2, 5.2, limbColor);
+        drawNinjaFoot(p.lFootX, p.lFootY, p.lFootX + 8, p.lFootY - 1, limbColor);
+
+        drawCharacterHead(char.id, p.headX, p.headY, p.headTilt, b > 0.45);
+
+        drawSculptedLimb(p.shoulderX, p.shoulderY, p.lElbowX, p.lElbowY, p.lHandX, p.lHandY, 8.0, 6.5, 4.6, limbColor);
+        ctx.fillStyle = limbColor; ctx.beginPath(); ctx.arc(p.lHandX, p.lHandY, 4.0, 0, Math.PI * 2); ctx.fill();
+
+        ctx.restore();
+      }
+    }
+
+    function loop() {
+      updatePhysics();
+      render();
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
