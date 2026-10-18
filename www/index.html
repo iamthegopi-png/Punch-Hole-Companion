@@ -14,7 +14,14 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    html, body {
+    html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: transparent !important;
+    }
+
+    body {
       width: 100%;
       height: 100%;
       overflow: hidden;
@@ -23,8 +30,11 @@
       color: #ffffff;
     }
 
+    html.transparent-overlay,
     body.transparent-overlay {
       background: transparent !important;
+      background-color: transparent !important;
+      background-image: none !important;
     }
     body.transparent-overlay #ui-dock,
     body.transparent-overlay #cutout-wrapper,
@@ -45,6 +55,7 @@
       width: 100%;
       height: 100%;
       z-index: 2;
+      background: transparent !important;
       touch-action: none;
       transition: opacity 0.25s ease;
     }
@@ -99,15 +110,15 @@
       box-shadow: inset 0 0 2px rgba(100, 180, 255, 0.4);
     }
 
-    /* Dialogue & Wisdom Speech Bubble with Reading Progress Bar */
+    /* Clean Dialogue & Wisdom Speech Bubble (Placed below character, no timer line) */
     #speech-bubble {
       position: fixed;
       z-index: 8;
       width: max-content;
-      max-width: min(278px, 92vw);
+      max-width: min(275px, 90vw);
       background: rgba(255, 255, 255, 0.98);
       color: #0f1429;
-      padding: 11px 15px 13px;
+      padding: 11px 15px;
       border-radius: 16px;
       font-size: 12px;
       line-height: 1.45;
@@ -115,15 +126,14 @@
       box-shadow: 0 12px 32px rgba(10, 14, 35, 0.38);
       pointer-events: none;
       opacity: 0;
-      overflow: hidden;
-      transform: translate(-50%, -100%) scale(0.82);
+      transform: translate(-50%, 0) scale(0.85);
       transition:
         opacity 0.25s ease,
         transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
     #speech-bubble.visible {
       opacity: 1;
-      transform: translate(-50%, -100%) scale(1);
+      transform: translate(-50%, 0) scale(1);
     }
     #speech-bubble .bubble-header {
       display: flex;
@@ -147,14 +157,15 @@
       border-radius: 4px;
       color: #475569;
     }
-    #bubble-progress {
+    #speech-bubble::before {
+      content: "";
       position: absolute;
-      bottom: 0;
-      left: 0;
-      height: 3px;
-      width: 100%;
-      background: #e01937;
-      transform-origin: left center;
+      top: -5px;
+      left: 50%;
+      transform: translateX(-50%) rotate(45deg);
+      width: 11px;
+      height: 11px;
+      background: rgba(255, 255, 255, 0.98);
     }
 
     /* Glassmorphic Settings Dock */
@@ -341,14 +352,13 @@
     </div>
   </div>
 
-  <!-- Dialogue & Wisdom Speech Bubble -->
+  <!-- Dialogue & Wisdom Speech Bubble (No timer bar) -->
   <div id="speech-bubble">
     <div class="bubble-header">
       <span class="speaker-tag" id="bubble-speaker">SHINOBI</span>
       <span class="category-tag" id="bubble-cat">Motivation</span>
     </div>
     <span id="bubble-text">Let's conquer your goals today!</span>
-    <div id="bubble-progress"></div>
   </div>
 
   <canvas id="scene"></canvas>
@@ -408,8 +418,8 @@
         <input type="range" id="read-time-slider" min="4" max="18" value="8" />
       </div>
       <div>
-        <div class="slider-header"><span>Rope Depth</span><span id="rope-label">36%</span></div>
-        <input type="range" id="rope-slider" min="18" max="74" value="36" />
+        <div class="slider-header"><span>Rope Depth</span><span id="rope-label">28%</span></div>
+        <input type="range" id="rope-slider" min="15" max="65" value="28" />
       </div>
     </div>
 
@@ -434,7 +444,7 @@
   </div>
 
   <script>
-    const STORAGE_KEY = 'punch_hole_companion_state_v4';
+    const STORAGE_KEY = 'punch_hole_companion_state_v5';
     const params = new URLSearchParams(window.location.search);
     const isOverlayWindow = params.get('overlay') === '1';
 
@@ -447,7 +457,6 @@
     const bubbleSpeaker = document.getElementById('bubble-speaker');
     const bubbleCat = document.getElementById('bubble-cat');
     const bubbleText = document.getElementById('bubble-text');
-    const bubbleProgress = document.getElementById('bubble-progress');
     const readTimeSlider = document.getElementById('read-time-slider');
     const readTimeLabel = document.getElementById('read-time-label');
     const camYSlider = document.getElementById('cam-y-slider');
@@ -468,11 +477,13 @@
     const batteryBtn = document.getElementById('battery-btn');
 
     if (isOverlayWindow) {
+      document.documentElement.classList.add('transparent-overlay');
       document.body.classList.add('transparent-overlay');
     }
 
     let width = window.innerWidth;
     let height = window.innerHeight;
+    let screenRefHeight = Math.max(window.screen ? window.screen.height : height, height);
     let dpr = Math.min(window.devicePixelRatio || 1, 2.5);
     let camTopOffset = params.has('camy') ? Number(params.get('camy')) : 6;
     let camLeftOffset = params.has('camx') ? Number(params.get('camx')) : 0;
@@ -494,11 +505,6 @@
       camXLabel.textContent = `${camLeftOffset > 0 ? '+' : ''}${camLeftOffset}px`;
     }
 
-    function checkOrientation() {
-      const landscape = window.innerWidth > window.innerHeight * 1.15;
-      window.setLandscapeMode(landscape);
-    }
-
     window.setLandscapeMode = function(landscape) {
       isLandscapePaused = Boolean(landscape);
       document.body.classList.toggle('landscape-paused', isLandscapePaused);
@@ -513,13 +519,13 @@
     function resize() {
       width = window.innerWidth;
       height = window.innerHeight;
+      screenRefHeight = Math.max(window.screen ? window.screen.height : height, height);
       dpr = Math.min(window.devicePixelRatio || 1, 2.5);
       canvas.width = width * dpr;
       canvas.height = height * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       anchorX = width / 2 + camLeftOffset;
       anchorY = camTopOffset + 17;
-      checkOrientation();
     }
     window.addEventListener('resize', resize);
     updateCameraPosition(camTopOffset, camLeftOffset);
@@ -619,7 +625,6 @@
       ]
     };
 
-    // Fisher-Yates Non-Repeating Shuffle Decks
     const shuffleDecks = {};
     function getNextFromDeck(key, list) {
       if (!shuffleDecks[key] || shuffleDecks[key].length === 0) {
@@ -653,7 +658,7 @@
     let lastTickTime = Date.now();
 
     let state = 'DROP_ROPE';
-    let targetRopeRatio = params.has('rope') ? Number(params.get('rope')) / 100 : 0.36;
+    let targetRopeRatio = params.has('rope') ? Number(params.get('rope')) / 100 : 0.28;
     let ropeExtend = 0.0, ropeExtendVel = 0.0;
     let slidePos = 0.0, slideVel = 0.0;
 
@@ -673,14 +678,21 @@
     const RIBBON_LEN = 8;
     let ribbonNodes = Array.from({ length: RIBBON_LEN }, () => ({ x: 0, y: 0 }));
 
-    // Notify Native OverlayService to enable/disable hardware accelerometer (0% idle drain)
     function notifyNativeCompanionOut(isOut) {
       if (window.OverlayHost && typeof window.OverlayHost.setCompanionOut === 'function') {
         window.OverlayHost.setCompanionOut(Boolean(isOut));
       }
     }
 
-    // Live Config Receiver (Updates overlay smoothly without WebView page reload)
+    // Native Java Heartbeat Trigger (Guarantees visits even when main app is closed)
+    window.triggerNativeVisit = function() {
+      if (state === 'INSIDE' && !isLandscapePaused) {
+        visitCountdown = visitIntervalSec;
+        deployCompanion(true);
+        setTimeout(() => speakWisdom('random'), 1200);
+      }
+    };
+
     window.applyLiveConfig = function(cfg) {
       if (!cfg) return;
       if (cfg.charMode !== undefined) {
@@ -806,7 +818,7 @@
         const q = buildOverlayQuery();
         const jsonStr = JSON.stringify(payloadObj || {});
         if (typeof window.NativeApp.updateOverlayLive === 'function') {
-          window.NativeApp.updateOverlayLive(q, jsonStr);
+          window.NativeApp.updateOverlayLive(q, jsonStr, visitIntervalSec);
         } else if (typeof window.NativeApp.updateOverlayQuery === 'function') {
           window.NativeApp.updateOverlayQuery(q);
         }
@@ -863,17 +875,8 @@
 
       bubbleSpeaker.textContent = char.name;
       bubbleSpeaker.style.color = char.color;
-      bubbleProgress.style.background = char.color;
       bubbleCat.textContent = catName;
       bubbleText.innerHTML = text;
-
-      // Animate visual reading timer bar
-      bubbleProgress.style.transition = 'none';
-      bubbleProgress.style.transform = 'scaleX(1)';
-      void bubbleProgress.offsetWidth;
-      bubbleProgress.style.transition = `transform ${bubbleDisplaySec}s linear`;
-      bubbleProgress.style.transform = 'scaleX(0)';
-
       speechBubble.classList.add('visible');
 
       clearTimeout(bubbleTimeout);
@@ -1116,9 +1119,10 @@
 
     sysOverlayBtn.addEventListener('click', () => {
       if (window.NativeApp && typeof window.NativeApp.toggleSystemOverlay === 'function') {
-        window.NativeApp.toggleSystemOverlay(buildOverlayQuery());
-        setTimeout(refreshOverlayBtnState, 500);
+        window.NativeApp.toggleSystemOverlay(buildOverlayQuery(), visitIntervalSec);
+        setTimeout(refreshOverlayBtnState, 600);
       } else {
+        document.documentElement.classList.toggle('transparent-overlay');
         document.body.classList.toggle('transparent-overlay');
         resize();
       }
@@ -1134,7 +1138,7 @@
 
     canvas.addEventListener('pointerdown', (e) => {
       if (state !== 'PERCHED') return;
-      const totalLen = height * targetRopeRatio * ropeExtend + ropeStretch;
+      const totalLen = screenRefHeight * targetRopeRatio * ropeExtend + ropeStretch;
       const knotX = anchorX + Math.sin(ropeAngle) * totalLen;
       const knotY = anchorY + Math.cos(ropeAngle) * totalLen;
       if (Math.hypot(e.clientX - knotX, e.clientY - (knotY - 30)) < 68) {
@@ -1481,7 +1485,7 @@
       ctx.clearRect(0, 0, width, height);
       if (state === 'INSIDE' || isLandscapePaused) return;
 
-      const maxRopeLen = height * targetRopeRatio;
+      const maxRopeLen = Math.min(height - 140, screenRefHeight * targetRopeRatio);
       const currentRopeLen = maxRopeLen * ropeExtend + ropeStretch;
       const sinA = Math.sin(ropeAngle), cosA = Math.cos(ropeAngle);
       const knotX = anchorX + sinA * currentRopeLen;
@@ -1497,11 +1501,12 @@
         const charX = invT * invT * anchorX + 2 * invT * t * midX + t * t * knotX;
         const charY = invT * invT * anchorY + 2 * invT * t * midY + t * t * knotY;
 
+        // Place speech bubble cleanly BELOW the companion so it never gets cut off at the top
         if (speechBubble.classList.contains('visible')) {
-          const halfBubble = Math.min(139, width * 0.46);
+          const halfBubble = Math.min(138, width * 0.45);
           const clampedX = Math.max(halfBubble + 6, Math.min(width - halfBubble - 6, charX));
           speechBubble.style.left = `${clampedX}px`;
-          speechBubble.style.top = `${Math.max(72, charY - 82)}px`;
+          speechBubble.style.top = `${Math.min(height - 110, knotY + 26)}px`;
         }
 
         const breathe = Math.sin(time * 2.5) * 1.2;
