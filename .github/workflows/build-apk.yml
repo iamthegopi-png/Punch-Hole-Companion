@@ -71,7 +71,7 @@ jobs:
 
           npx @capacitor/assets generate --android --iconBackgroundColor '#090b10' --iconBackgroundColorDark '#090b10' --splashBackgroundColor '#090b10' --splashBackgroundColorDark '#090b10'
 
-      - name: Inject Cutout Fullscreen, Zero-Drain Sensor Overlay & Boot Receiver
+      - name: Inject Isolated Overlay Process, Native Heartbeat & Boot Receiver
         run: |
           PKG_DIR="android/app/src/main/java/com/companion/punchhole"
           mkdir -p "$PKG_DIR"
@@ -85,16 +85,18 @@ jobs:
           import android.content.SharedPreferences;
           import android.os.Build;
           import android.provider.Settings;
+          import java.io.File;
 
           public class BootReceiver extends BroadcastReceiver {
               @Override
               public void onReceive(Context context, Intent intent) {
                   if (Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction())) {
+                      File flag = new File(context.getFilesDir(), "overlay.running");
                       SharedPreferences prefs = context.getSharedPreferences("PunchHolePrefs", Context.MODE_PRIVATE);
-                      boolean shouldRun = prefs.getBoolean("overlay_running", false);
-                      if (shouldRun && (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(context))) {
+                      if (flag.exists() && (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(context))) {
                           Intent svc = new Intent(context, OverlayService.class);
                           svc.putExtra("query", prefs.getString("overlay_query", "overlay=1"));
+                          svc.putExtra("interval_sec", prefs.getInt("interval_sec", 120));
                           if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                               context.startForegroundService(svc);
                           } else {
@@ -128,7 +130,9 @@ jobs:
           import android.hardware.SensorEventListener;
           import android.hardware.SensorManager;
           import android.os.Build;
+          import android.os.Handler;
           import android.os.IBinder;
+          import android.os.Looper;
           import android.util.DisplayMetrics;
           import android.view.Gravity;
           import android.view.View;
@@ -137,9 +141,9 @@ jobs:
           import android.webkit.WebSettings;
           import android.webkit.WebView;
           import android.webkit.WebViewClient;
+          import java.io.File;
 
           public class OverlayService extends Service implements SensorEventListener {
-              public static boolean isRunning = false;
               private WindowManager windowManager;
               private WebView webView;
               private SensorManager sensorManager;
@@ -151,6 +155,33 @@ jobs:
               private boolean isPortrait = true;
               private boolean sensorRegistered = false;
 
+              private int visitIntervalSec = 120;
+              private int secondsSinceLastVisit = 0;
+              private final Handler heartbeatHandler = new Handler(Looper.getMainLooper());
+
+              // Native Java Heartbeat: Keeps WebView alive & triggers visits even when MainActivity is closed
+              private final Runnable heartbeatRunnable = new Runnable() {
+                  @Override
+                  public void run() {
+                      if (isScreenOn && isPortrait && webView != null) {
+                          webView.onResume();
+                          webView.resumeTimers();
+                          if (!isCompanionOut && visitIntervalSec > 0) {
+                              secondsSinceLastVisit += 2;
+                              if (secondsSinceLastVisit >= visitIntervalSec) {
+                                  secondsSinceLastVisit = 0;
+                                  isCompanionOut = true;
+                                  updateSensorRegistration();
+                                  webView.evaluateJavascript("if(window.triggerNativeVisit) window.triggerNativeVisit();", null);
+                              }
+                          } else {
+                              secondsSinceLastVisit = 0;
+                          }
+                      }
+                      heartbeatHandler.postDelayed(this, 2000);
+                  }
+              };
+
               private final BroadcastReceiver screenReceiver = new BroadcastReceiver() {
                   @Override
                   public void onReceive(Context context, Intent intent) {
@@ -159,18 +190,33 @@ jobs:
                           updateSensorRegistration();
                       } else if (Intent.ACTION_SCREEN_ON.equals(intent.getAction())) {
                           isScreenOn = true;
+                          if (webView != null) {
+                              webView.onResume();
+                              webView.resumeTimers();
+                          }
                           updateSensorRegistration();
                       }
                   }
               };
+
+              private void setRunningFlag(boolean running) {
+                  try {
+                      File f = new File(getFilesDir(), "overlay.running");
+                      if (running) {
+                          if (!f.exists()) f.createNewFile();
+                      } else {
+                          if (f.exists()) f.delete();
+                      }
+                  } catch (Exception ignored) {}
+              }
 
               @Override
               public void onCreate() {
                   super.onCreate();
                   prefs = getSharedPreferences("PunchHolePrefs", MODE_PRIVATE);
                   currentQuery = prefs.getString("overlay_query", "overlay=1");
-                  prefs.edit().putBoolean("overlay_running", true).apply();
-                  isRunning = true;
+                  visitIntervalSec = prefs.getInt("interval_sec", 120);
+                  setRunningFlag(true);
                   startOverlayForeground();
 
                   IntentFilter filter = new IntentFilter();
@@ -181,8 +227,8 @@ jobs:
                   windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
                   DisplayMetrics dm = getResources().getDisplayMetrics();
                   isPortrait = getResources().getConfiguration().orientation != Configuration.ORIENTATION_LANDSCAPE;
-                  int widthPx = Math.min(dm.widthPixels, (int) (340 * dm.density));
-                  int heightPx = (int) (540 * dm.density);
+                  int widthPx = dm.widthPixels;
+                  int heightPx = (int) (dm.heightPixels * 0.82f);
 
                   int layoutType = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
                           ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
@@ -211,7 +257,17 @@ jobs:
 
                   webView = new WebView(this);
                   webView.setBackgroundColor(Color.TRANSPARENT);
-                  webView.setWebViewClient(new WebViewClient());
+                  webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+                  webView.setWebViewClient(new WebViewClient() {
+                      @Override
+                      public void onPageFinished(WebView view, String url) {
+                          view.setBackgroundColor(Color.TRANSPARENT);
+                          view.evaluateJavascript(
+                              "document.documentElement.classList.add('transparent-overlay');" +
+                              "document.body.classList.add('transparent-overlay');", null
+                          );
+                      }
+                  });
                   WebSettings settings = webView.getSettings();
                   settings.setJavaScriptEnabled(true);
                   settings.setDomStorageEnabled(true);
@@ -223,6 +279,7 @@ jobs:
 
                   sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
                   updateSensorRegistration();
+                  heartbeatHandler.postDelayed(heartbeatRunnable, 2000);
               }
 
               private void updateSensorRegistration() {
@@ -244,6 +301,7 @@ jobs:
                   @JavascriptInterface
                   public void setCompanionOut(boolean out) {
                       isCompanionOut = out;
+                      if (!out) secondsSinceLastVisit = 0;
                       updateSensorRegistration();
                   }
               }
@@ -264,24 +322,43 @@ jobs:
               @Override
               public int onStartCommand(Intent intent, int flags, int startId) {
                   if (intent != null && "STOP_OVERLAY".equals(intent.getAction())) {
-                      prefs.edit().putBoolean("overlay_running", false).apply();
+                      setRunningFlag(false);
                       stopSelf();
                       return START_NOT_STICKY;
                   }
+                  setRunningFlag(true);
                   if (intent != null) {
+                      if (intent.hasExtra("interval_sec")) {
+                          visitIntervalSec = intent.getIntExtra("interval_sec", visitIntervalSec);
+                          prefs.edit().putInt("interval_sec", visitIntervalSec).apply();
+                      }
                       String q = intent.getStringExtra("query");
                       String liveJson = intent.getStringExtra("live_json");
                       if (q != null) {
                           currentQuery = q;
-                          prefs.edit().putString("overlay_query", q).putBoolean("overlay_running", true).apply();
+                          prefs.edit().putString("overlay_query", q).apply();
                       }
                       if (liveJson != null && webView != null) {
-                          webView.post(() -> webView.evaluateJavascript("if(window.applyLiveConfig) window.applyLiveConfig(" + liveJson + ");", null));
+                          webView.post(() -> {
+                              webView.onResume();
+                              webView.resumeTimers();
+                              webView.evaluateJavascript("if(window.applyLiveConfig) window.applyLiveConfig(" + liveJson + ");", null);
+                          });
                       } else if (q != null && webView != null && liveJson == null) {
                           webView.loadUrl("file:///android_asset/public/index.html?" + currentQuery);
                       }
                   }
                   return START_STICKY;
+              }
+
+              @Override
+              public void onTaskRemoved(Intent rootIntent) {
+                  // Keep overlay alive even when user swipes the main app away from Recent Apps
+                  super.onTaskRemoved(rootIntent);
+                  if ( webView != null ) {
+                      webView.onResume();
+                      webView.resumeTimers();
+                  }
               }
 
               private void startOverlayForeground() {
@@ -340,7 +417,8 @@ jobs:
 
               @Override
               public void onDestroy() {
-                  isRunning = false;
+                  setRunningFlag(false);
+                  heartbeatHandler.removeCallbacks(heartbeatRunnable);
                   try {
                       unregisterReceiver(screenReceiver);
                   } catch (Exception ignored) {}
@@ -359,222 +437,3 @@ jobs:
               public IBinder onBind(Intent intent) {
                   return null;
               }
-          }
-          EOF
-
-          cat << 'EOF' > "$PKG_DIR/MainActivity.java"
-          package com.companion.punchhole;
-
-          import android.content.Context;
-          import android.content.Intent;
-          import android.content.SharedPreferences;
-          import android.graphics.Color;
-          import android.hardware.Sensor;
-          import android.hardware.SensorEvent;
-          import android.hardware.SensorEventListener;
-          import android.hardware.SensorManager;
-          import android.net.Uri;
-          import android.os.Build;
-          import android.os.Bundle;
-          import android.os.PowerManager;
-          import android.provider.Settings;
-          import android.view.View;
-          import android.view.WindowManager;
-          import android.webkit.JavascriptInterface;
-          import android.webkit.WebView;
-          import com.getcapacitor.BridgeActivity;
-
-          public class MainActivity extends BridgeActivity implements SensorEventListener {
-              private SensorManager sensorManager;
-              private boolean sensorActive = false;
-
-              @Override
-              public void onCreate(Bundle savedInstanceState) {
-                  super.onCreate(savedInstanceState);
-
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                      WindowManager.LayoutParams lp = getWindow().getAttributes();
-                      lp.layoutInDisplayCutoutMode = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
-                              ? WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
-                              : WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
-                      getWindow().setAttributes(lp);
-                  }
-                  getWindow().addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
-                  getWindow().setStatusBarColor(Color.TRANSPARENT);
-                  getWindow().getDecorView().setSystemUiVisibility(
-                          View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                  );
-
-                  if (getBridge() != null && getBridge().getWebView() != null) {
-                      WebView wv = getBridge().getWebView();
-                      wv.setBackgroundColor(Color.TRANSPARENT);
-                      wv.addJavascriptInterface(new NativeBridge(), "NativeApp");
-                  }
-                  sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-              }
-
-              @Override
-              public void onPause() {
-                  super.onPause();
-                  if (getBridge() != null && getBridge().getWebView() != null) {
-                      getBridge().getWebView().onResume();
-                      getBridge().getWebView().resumeTimers();
-                  }
-              }
-
-              @Override
-              public void onSensorChanged(SensorEvent event) {
-                  if (sensorActive && event.sensor.getType() == Sensor.TYPE_ACCELEROMETER && getBridge() != null) {
-                      float tiltDeg = Math.max(-40f, Math.min(40f, -event.values[0] * 4.2f));
-                      getBridge().getWebView().post(() ->
-                          getBridge().getWebView().evaluateJavascript(
-                              "if(window.setNativeTilt) window.setNativeTilt(" + tiltDeg + ");", null
-                          )
-                      );
-                  }
-              }
-
-              @Override
-              public void onAccuracyChanged(Sensor sensor, int accuracy) {}
-
-              public class NativeBridge {
-                  @JavascriptInterface
-                  public void toggleSystemOverlay(String query) {
-                      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(MainActivity.this)) {
-                          Intent intent = new Intent(
-                              Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                              Uri.parse("package:" + getPackageName())
-                          );
-                          startActivity(intent);
-                          return;
-                      }
-                      SharedPreferences prefs = getSharedPreferences("PunchHolePrefs", MODE_PRIVATE);
-                      Intent svc = new Intent(MainActivity.this, OverlayService.class);
-                      if (OverlayService.isRunning) {
-                          prefs.edit().putBoolean("overlay_running", false).apply();
-                          stopService(svc);
-                      } else {
-                          prefs.edit().putString("overlay_query", query).putBoolean("overlay_running", true).apply();
-                          svc.putExtra("query", query);
-                          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                              startForegroundService(svc);
-                          } else {
-                              startService(svc);
-                          }
-                      }
-                  }
-
-                  @JavascriptInterface
-                  public void updateOverlayLive(String query, String jsonConfig) {
-                      SharedPreferences prefs = getSharedPreferences("PunchHolePrefs", MODE_PRIVATE);
-                      prefs.edit().putString("overlay_query", query).apply();
-                      if (OverlayService.isRunning) {
-                          Intent svc = new Intent(MainActivity.this, OverlayService.class);
-                          svc.putExtra("query", query);
-                          svc.putExtra("live_json", jsonConfig);
-                          startService(svc);
-                      }
-                  }
-
-                  @JavascriptInterface
-                  public void updateOverlayQuery(String query) {
-                      updateOverlayLive(query, null);
-                  }
-
-                  @JavascriptInterface
-                  public boolean isOverlayRunning() {
-                      return OverlayService.isRunning;
-                  }
-
-                  @JavascriptInterface
-                  public void setSensorEnabled(boolean enabled) {
-                      sensorActive = enabled;
-                      if (sensorManager != null) {
-                          Sensor accel = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-                          if (enabled && accel != null) {
-                              sensorManager.registerListener(MainActivity.this, accel, SensorManager.SENSOR_DELAY_UI);
-                          } else {
-                              sensorManager.unregisterListener(MainActivity.this);
-                          }
-                      }
-                  }
-
-                  @JavascriptInterface
-                  public void requestBatteryExemption() {
-                      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                          PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
-                          if (pm != null && !pm.isIgnoringBatteryOptimizations(getPackageName())) {
-                              Intent intent = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
-                              intent.setData(Uri.parse("package:" + getPackageName()));
-                              startActivity(intent);
-                          }
-                      }
-                  }
-              }
-          }
-          EOF
-
-          MANIFEST="android/app/src/main/AndroidManifest.xml"
-          sed -i 's/android:configChanges="[^"]*"/android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|density|navigation" android:resizeableActivity="true"/' "$MANIFEST"
-          sed -i 's/android:launchMode="[^"]*"/android:launchMode="singleTask"/' "$MANIFEST"
-          sed -i 's/<application/<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" \/>\n    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" \/>\n    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" \/>\n    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" \/>\n    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" \/>\n    <application/' "$MANIFEST"
-          sed -i 's/<\/application>/    <service android:name=".OverlayService" android:exported="false" android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize" android:foregroundServiceType="specialUse">\n            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="persistent_punch_hole_companion_overlay" \/>\n        <\/service>\n        <receiver android:name=".BootReceiver" android:enabled="true" android:exported="true">\n            <intent-filter>\n                <action android:name="android.intent.action.BOOT_COMPLETED" \/>\n            <\/intent-filter>\n        <\/receiver>\n    <\/application>/' "$MANIFEST"
-
-      - name: Build Unsigned Release APK
-        working-directory: ./android
-        run: |
-          chmod +x gradlew
-          echo "org.gradle.jvmargs=-Xmx3g -XX:+HeapDumpOnOutOfMemoryError" >> gradle.properties
-          ./gradlew assembleRelease -x lint -x lintVitalRelease --no-daemon
-
-      - name: Sign & Align Release APK
-        env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: |
-          mkdir -p release-output
-          KS_PASS="${KEYSTORE_PASSWORD:-companion123}"
-          K_ALIAS="${KEY_ALIAS:-companion}"
-          K_PASS="${KEY_PASSWORD:-companion123}"
-
-          if [ -n "$KEYSTORE_BASE64" ]; then
-            echo "Using permanent keystore from GitHub Secrets..."
-            echo "$KEYSTORE_BASE64" | base64 --decode > release.jks
-          else
-            echo "No KEYSTORE_BASE64 secret found. Generating a release keystore..."
-            keytool -genkeypair -v \
-              -keystore release.jks \
-              -alias "$K_ALIAS" \
-              -keyalg RSA \
-              -keysize 2048 \
-              -validity 10000 \
-              -storepass "$KS_PASS" \
-              -keypass "$K_PASS" \
-              -dname "CN=PunchHoleCompanion, OU=Mobile, O=Companion, L=City, S=State, C=IN"
-
-            base64 -w 0 release.jks > release-output/keystore-base64.txt
-          fi
-
-          BUILD_TOOLS=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)
-          UNSIGNED_APK="android/app/build/outputs/apk/release/app-release-unsigned.apk"
-          ALIGNED_APK="release-output/app-release-aligned.apk"
-          SIGNED_APK="release-output/PunchHoleCompanion-release-signed.apk"
-
-          "$BUILD_TOOLS/zipalign" -v -p 4 "$UNSIGNED_APK" "$ALIGNED_APK"
-          "$BUILD_TOOLS/apksigner" sign \
-            --ks release.jks \
-            --ks-key-alias "$K_ALIAS" \
-            --ks-pass pass:"$KS_PASS" \
-            --key-pass pass:"$K_PASS" \
-            --out "$SIGNED_APK" \
-            "$ALIGNED_APK"
-
-          rm -f "$ALIGNED_APK"
-
-      - name: Upload Signed Release APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: PunchHoleCompanion-Release-APK
-          path: release-output/
