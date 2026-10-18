@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Punch Hole Companion — Wisdom & Motivation Edition</title>
   <style>
     * {
@@ -26,7 +26,6 @@
     body.transparent-overlay {
       background: transparent !important;
     }
-    body.transparent-overlay .status-bar,
     body.transparent-overlay #ui-dock,
     body.transparent-overlay #cutout-wrapper,
     body.transparent-overlay #restore-ui-btn {
@@ -42,41 +41,10 @@
       touch-action: none;
     }
 
-    /* Status Bar */
-    .status-bar {
-      position: absolute;
-      top: 18px;
-      left: 28px;
-      right: 28px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 15px;
-      font-weight: 700;
-      color: #0b0d17;
-      z-index: 5;
-      pointer-events: none;
-    }
-    .signal-bars {
-      display: flex;
-      align-items: flex-end;
-      gap: 3px;
-      height: 13px;
-    }
-    .signal-bars span {
-      width: 3.2px;
-      background: #0b0d17;
-      border-radius: 1.5px;
-    }
-    .signal-bars span:nth-child(1) { height: 4px; }
-    .signal-bars span:nth-child(2) { height: 7px; }
-    .signal-bars span:nth-child(3) { height: 10px; }
-    .signal-bars span:nth-child(4) { height: 13px; }
-
-    /* Interactive Punch Hole / Dynamic Island */
+    /* Interactive Punch Hole aligned to Physical Camera Cutout */
     #cutout-wrapper {
-      position: absolute;
-      top: 11px;
+      position: fixed;
+      top: 6px;
       left: 50%;
       transform: translateX(-50%);
       z-index: 10;
@@ -94,7 +62,7 @@
       align-items: center;
       justify-content: space-between;
       padding: 0 12px;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
       transition:
         width 0.4s cubic-bezier(0.25, 1, 0.5, 1),
         height 0.4s cubic-bezier(0.25, 1, 0.5, 1),
@@ -126,15 +94,16 @@
     #speech-bubble {
       position: fixed;
       z-index: 8;
-      max-width: 250px;
-      background: rgba(255, 255, 255, 0.97);
+      width: max-content;
+      max-width: min(270px, 90vw);
+      background: rgba(255, 255, 255, 0.98);
       color: #0f1429;
-      padding: 10px 14px;
+      padding: 11px 15px;
       border-radius: 16px;
       font-size: 12px;
-      line-height: 1.4;
+      line-height: 1.45;
       font-weight: 600;
-      box-shadow: 0 12px 32px rgba(10, 14, 35, 0.35);
+      box-shadow: 0 12px 32px rgba(10, 14, 35, 0.38);
       pointer-events: none;
       opacity: 0;
       transform: translate(-50%, -100%) scale(0.82);
@@ -150,7 +119,8 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 3px;
+      gap: 8px;
+      margin-bottom: 4px;
     }
     #speech-bubble .speaker-tag {
       font-size: 9.5px;
@@ -163,7 +133,7 @@
       font-size: 9px;
       font-weight: 700;
       background: rgba(0, 0, 0, 0.07);
-      padding: 1px 5px;
+      padding: 1px 6px;
       border-radius: 4px;
       color: #475569;
     }
@@ -175,26 +145,29 @@
       transform: translateX(-50%) rotate(45deg);
       width: 11px;
       height: 11px;
-      background: rgba(255, 255, 255, 0.97);
+      background: rgba(255, 255, 255, 0.98);
     }
 
     /* Glassmorphic Settings Dock */
     #ui-dock {
-      position: absolute;
+      position: fixed;
       bottom: 16px;
       left: 50%;
       transform: translateX(-50%);
       width: min(94vw, 420px);
-      background: rgba(10, 13, 28, 0.8);
+      max-height: 82vh;
+      overflow-y: auto;
+      background: rgba(10, 13, 28, 0.86);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border: 1px solid rgba(255, 255, 255, 0.16);
       border-radius: 22px;
-      padding: 14px 16px;
+      padding: 13px 15px;
       z-index: 10;
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
       transition: transform 0.35s ease, opacity 0.25s ease;
     }
+    #ui-dock::-webkit-scrollbar { display: none; }
     #ui-dock.hidden {
       transform: translate(-50%, calc(100% + 30px));
       opacity: 0;
@@ -202,11 +175,11 @@
     }
 
     #restore-ui-btn {
-      position: absolute;
-      bottom: 16px;
+      position: fixed;
+      bottom: 20px;
       right: 16px;
       z-index: 11;
-      background: rgba(10, 13, 28, 0.82);
+      background: rgba(10, 13, 28, 0.85);
       border: 1px solid rgba(255, 255, 255, 0.2);
       color: #fff;
       padding: 8px 14px;
@@ -223,6 +196,8 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
       margin-bottom: 9px;
       font-size: 12px;
       font-weight: 700;
@@ -311,11 +286,19 @@
       gap: 6px;
       margin-top: 7px;
     }
+    .overlay-bar {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      gap: 6px;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.14);
+    }
     .act-btn {
       background: rgba(255, 255, 255, 0.1);
       border: 1px solid rgba(255, 255, 255, 0.13);
       color: #fff;
-      padding: 7px 4px;
+      padding: 8px 4px;
       border-radius: 10px;
       font-size: 11px;
       font-weight: 600;
@@ -325,21 +308,19 @@
       background: #e01937;
       border-color: transparent;
     }
+    .act-btn.emerald {
+      background: #10b981;
+      border-color: #059669;
+      color: #052e16;
+      font-weight: 800;
+    }
   </style>
 </head>
 <body>
 
-  <!-- Status Bar -->
-  <div class="status-bar">
-    <span id="clock">2:32</span>
-    <div class="signal-bars">
-      <span></span><span></span><span></span><span></span>
-    </div>
-  </div>
-
   <!-- Interactive Punch Hole / Dynamic Island -->
   <div id="cutout-wrapper">
-    <div id="punch-hole" title="Tap to Deploy or Retract">
+    <div id="punch-hole" class="circle-mode" title="Tap to Deploy or Retract">
       <span id="timer-badge">LIVE</span>
       <div class="camera-lens"></div>
     </div>
@@ -360,10 +341,10 @@
   <!-- Settings & Control Dock -->
   <div id="ui-dock">
     <div class="dock-top">
-      <span>Companion & Wisdom Library</span>
+      <span>Punch Hole Companion</span>
       <div style="display:flex; gap:5px;">
         <button class="pill-btn active-toggle" id="fall-toggle-btn">Fall: ON</button>
-        <button class="pill-btn" id="shape-btn">Island</button>
+        <button class="pill-btn" id="shape-btn">Hole</button>
         <button class="pill-btn" id="hide-btn">Hide</button>
       </div>
     </div>
@@ -392,10 +373,22 @@
       <div class="chip" data-sec="300">5 Min</div>
     </div>
 
-    <!-- Sliders -->
+    <!-- Reading Time Slider -->
     <div class="slider-group">
-      <div class="slider-header"><span>Rope Drop Depth</span><span id="rope-label">42%</span></div>
-      <input type="range" id="rope-slider" min="20" max="74" value="42" />
+      <div class="slider-header"><span>Bubble Display Time</span><span id="read-time-label">7s</span></div>
+      <input type="range" id="read-time-slider" min="3" max="15" value="7" />
+    </div>
+
+    <!-- Camera Cutout Vertical Alignment Slider -->
+    <div class="slider-group">
+      <div class="slider-header"><span>Camera Hole Y-Position</span><span id="cam-y-label">6px</span></div>
+      <input type="range" id="cam-y-slider" min="0" max="55" value="6" />
+    </div>
+
+    <!-- Rope Depth & Tilt Sliders -->
+    <div class="slider-group">
+      <div class="slider-header"><span>Rope Drop Depth</span><span id="rope-label">36%</span></div>
+      <input type="range" id="rope-slider" min="18" max="74" value="36" />
     </div>
 
     <div class="slider-group">
@@ -410,33 +403,64 @@
       <button class="act-btn" id="motivate-btn">Motivate 🔥</button>
       <button class="act-btn" id="gyro-btn">Gyro ON</button>
     </div>
+
+    <!-- Android System Overlay & Keep-Alive Bar -->
+    <div class="overlay-bar">
+      <button class="act-btn emerald" id="sys-overlay-btn">Float Over Apps 📌</button>
+      <button class="act-btn" id="battery-btn">Keep Alive ⚡</button>
+    </div>
   </div>
 
   <script>
+    const STORAGE_KEY = 'punch_hole_companion_state_v3';
+    const params = new URLSearchParams(window.location.search);
+    const isOverlayWindow = params.get('overlay') === '1';
+
     const canvas = document.getElementById('scene');
     const ctx = canvas.getContext('2d');
+    const cutoutWrapper = document.getElementById('cutout-wrapper');
     const punchHole = document.getElementById('punch-hole');
     const timerBadge = document.getElementById('timer-badge');
     const speechBubble = document.getElementById('speech-bubble');
     const bubbleSpeaker = document.getElementById('bubble-speaker');
     const bubbleCat = document.getElementById('bubble-cat');
     const bubbleText = document.getElementById('bubble-text');
+    const readTimeSlider = document.getElementById('read-time-slider');
+    const readTimeLabel = document.getElementById('read-time-label');
+    const camYSlider = document.getElementById('cam-y-slider');
+    const camYLabel = document.getElementById('cam-y-label');
     const ropeSlider = document.getElementById('rope-slider');
     const ropeLabel = document.getElementById('rope-label');
     const tiltSlider = document.getElementById('tilt-slider');
     const tiltLabel = document.getElementById('tilt-label');
     const fallToggleBtn = document.getElementById('fall-toggle-btn');
     const nextVisitLabel = document.getElementById('next-visit-label');
+    const uiDock = document.getElementById('ui-dock');
+    const restoreBtn = document.getElementById('restore-ui-btn');
+    const shapeBtn = document.getElementById('shape-btn');
+    const gyroBtn = document.getElementById('gyro-btn');
+    const sysOverlayBtn = document.getElementById('sys-overlay-btn');
+    const batteryBtn = document.getElementById('battery-btn');
 
-    if (window.location.search.includes('overlay=1')) {
+    if (isOverlayWindow) {
       document.body.classList.add('transparent-overlay');
     }
 
     let width = window.innerWidth;
     let height = window.innerHeight;
     let dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    let camTopOffset = params.has('camy') ? Number(params.get('camy')) : 6;
+    let bubbleDisplaySec = params.has('read') ? Number(params.get('read')) : 7;
     let anchorX = width / 2;
-    let anchorY = 28;
+    let anchorY = camTopOffset + 17;
+
+    function updateCameraPosition(px) {
+      camTopOffset = Number(px);
+      cutoutWrapper.style.top = `${camTopOffset}px`;
+      anchorY = camTopOffset + 17;
+      camYSlider.value = camTopOffset;
+      camYLabel.textContent = `${camTopOffset}px`;
+    }
 
     function resize() {
       width = window.innerWidth;
@@ -446,18 +470,22 @@
       canvas.height = height * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       anchorX = width / 2;
+      anchorY = camTopOffset + 17;
     }
     window.addEventListener('resize', resize);
+    updateCameraPosition(camTopOffset);
     resize();
 
-    // === BIG KNOWLEDGE LIBRARY: MAXIMS, BIASES, TRICKS & MOTIVATION ===
+    // === MASSIVELY EXPANDED WISDOM, PSYCHOLOGY, BIAS & STOIC LIBRARY ===
     const KNOWLEDGE_LIBRARY = {
       motivation: [
         "Focus on the next micro-step. Momentum builds action! ⚡",
         "Discipline is choosing between what you want now and what you want most.",
         "Your future self is depending on the work you put in today.",
         "Action cures anxiety. Dive into your task for just 5 minutes!",
-        "Take a deep breath. You are far more capable than you realize."
+        "Take a deep breath. You are far more capable than you realize.",
+        "Small daily improvements over time lead to stunning results.",
+        "Energy flows where attention goes. Guard your focus fiercely."
       ],
       timeCheck: [
         function() {
@@ -472,27 +500,39 @@
       workCheck: [
         "Time for a deep work sprint! Put your phone face down and crush it for 25 minutes. 💻",
         "Stand up, stretch your legs, and get back to your mission with fresh eyes! 🌟",
-        "Break your big project into three tiny tasks. Which one starts right now?"
+        "Break your big project into three tiny tasks. Which one starts right now?",
+        "Clear your desk and close unnecessary browser tabs. Cluttered environment = cluttered mind."
       ],
       psychologyTricks: [
         { title: "Benjamin Franklin Effect", text: "Want someone to like you? Ask them for a small favor. Psychologically, our brains justify helping them by deciding we like them." },
         { title: "Foot-in-the-Door Technique", text: "To achieve a massive goal, agree to a tiny request first. Compliance snowballs naturally." },
         { title: "The Zeigarnik Effect", text: "Your brain remembers unfinished tasks better than completed ones. Simply starting a task silences procrastination!" },
         { title: "The 2-Minute Rule", text: "If a task takes less than 2 minutes to do, do it immediately. It eliminates mental clutter." },
-        { title: "Social Proof", text: "We look to others to determine correct behavior. Surround yourself with driven people to elevate your output." }
+        { title: "Social Proof", text: "We look to others to determine correct behavior. Surround yourself with driven people to elevate your output." },
+        { title: "The Pygmalion Effect", text: "Higher expectations lead to an increase in performance. Expect excellence from yourself." },
+        { title: "Scarcity Principle", text: "We value things more when their availability is limited. Treat your time as your scarcest asset." },
+        { title: "The Reciprocity Norm", text: "When someone does something nice for us, we feel a deep psychological urge to return the favor." }
       ],
       cognitiveBiases: [
         { title: "Dunning-Kruger Effect", text: "Beginners often overestimate their knowledge, while experts underestimate theirs. Stay curious and humble!" },
         { title: "Confirmation Bias", text: "We naturally seek information that supports our existing beliefs. Actively test your assumptions!" },
         { title: "Loss Aversion", text: "Losing $100 hurts twice as much as gaining $100 feels good. Don't let fear of failure paralyze your risks." },
         { title: "Anchoring Bias", text: "We rely too heavily on the first piece of information we encounter. Question your baseline assumptions." },
-        { title: "Sunk Cost Fallacy", text: "Continuing a task just because you invested time in it, even when quitting is smarter. Cut your losses!" }
+        { title: "Sunk Cost Fallacy", text: "Continuing a task just because you invested time in it, even when quitting is smarter. Cut your losses!" },
+        { title: "Fundamental Attribution Error", text: "We judge others by their character, but ourselves by our circumstances. Practice radical empathy." },
+        { title: "Availability Heuristic", text: "We overestimate the likelihood of events that easily come to mind. Rely on data, not dramatic memories." },
+        { title: "Hindsight Bias", text: "Believing an event was predictable after it already happened. Don't punish past decisions with hindsight." }
       ],
       universalMaxims: [
         { title: "Marcus Aurelius (Stoicism)", text: "'The impediment to action advances action. What stands in the way becomes the way.'" },
         { title: "Seneca (Time)", text: "'It is not that we have a short time to live, but that we waste a lot of it.'" },
         { title: "Aristotle (Excellence)", text: "'We are what we repeatedly do. Excellence, then, is not an act, but a habit.'" },
-        { title: "Carl Jung (Awareness)", text: "'Until you make the unconscious conscious, it will direct your life and you will call it fate.'" }
+        { title: "Carl Jung (Awareness)", text: "'Until you make the unconscious conscious, it will direct your life and you will call it fate.'" },
+        { title: "Epictetus (Control)", text: "'Some things are in our control and others not. Focus solely on what you can change.'" },
+        { title: "Lao Tzu (Action)", text: "'A journey of a thousand miles begins with a single step.'" },
+        { title: "Viktor Frankl (Purpose)", text: "'He who has a why to live can bear almost any how.'" },
+        { title: "Socrates (Wisdom)", text: "'An unexamined life is not worth living. Question your daily routines and motives.'" },
+        { title: "Naval Ravikant (Leverage)", text: "'Judgment is more important than energy. Figure out where to aim before you fire.'" }
       ]
     };
 
@@ -503,15 +543,17 @@
       { id: 'fox', name: 'Kitsune', color: '#f97316' }
     ];
 
-    let charMode = 'rotate';
-    let activeCharIdx = 0;
-    let visitIntervalSec = 120;
-    let visitCountdown = 120;
+    let charMode = params.get('char') || 'rotate';
+    let activeCharIdx = charMode !== 'rotate' ? Number(charMode) : 0;
+    let visitIntervalSec = params.has('sec') ? Number(params.get('sec')) : 120;
+    let visitCountdown = visitIntervalSec;
     let hangOutTimer = 22;
-    let fallAnimationEnabled = true;
+    let fallAnimationEnabled = params.has('fall') ? params.get('fall') === '1' : true;
+    let gyroEnabled = false;
+    let lastTickTime = Date.now();
 
     let state = 'DROP_ROPE';
-    let targetRopeRatio = 0.42;
+    let targetRopeRatio = params.has('rope') ? Number(params.get('rope')) / 100 : 0.36;
     let ropeExtend = 0.0, ropeExtendVel = 0.0;
     let slidePos = 0.0, slideVel = 0.0;
 
@@ -531,7 +573,108 @@
     const RIBBON_LEN = 8;
     let ribbonNodes = Array.from({ length: RIBBON_LEN }, () => ({ x: 0, y: 0 }));
 
-    // Intelligent Speech & Wisdom Router
+    function saveState() {
+      if (isOverlayWindow) return;
+      try {
+        const payload = {
+          charMode,
+          activeCharIdx,
+          visitIntervalSec,
+          targetRopeRatio,
+          camTopOffset,
+          bubbleDisplaySec,
+          fallAnimationEnabled,
+          circleMode: punchHole.classList.contains('circle-mode'),
+          dockHidden: uiDock.classList.contains('hidden'),
+          gyroEnabled
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+        syncNativeOverlayConfig();
+      } catch (_) {}
+    }
+
+    function loadState() {
+      if (isOverlayWindow) return;
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const saved = JSON.parse(raw);
+        if (saved.charMode !== undefined) charMode = saved.charMode;
+        if (saved.activeCharIdx !== undefined) activeCharIdx = Number(saved.activeCharIdx) || 0;
+        if (saved.visitIntervalSec !== undefined) {
+          visitIntervalSec = Number(saved.visitIntervalSec);
+          visitCountdown = visitIntervalSec;
+        }
+        if (saved.camTopOffset !== undefined) {
+          updateCameraPosition(saved.camTopOffset);
+        }
+        if (saved.bubbleDisplaySec !== undefined) {
+          bubbleDisplaySec = Number(saved.bubbleDisplaySec);
+          readTimeSlider.value = bubbleDisplaySec;
+          readTimeLabel.textContent = `${bubbleDisplaySec}s`;
+        }
+        if (saved.targetRopeRatio !== undefined) {
+          targetRopeRatio = Number(saved.targetRopeRatio);
+          const pct = Math.round(targetRopeRatio * 100);
+          ropeSlider.value = pct;
+          ropeLabel.textContent = `${pct}%`;
+        }
+        if (saved.fallAnimationEnabled !== undefined) {
+          fallAnimationEnabled = Boolean(saved.fallAnimationEnabled);
+          fallToggleBtn.textContent = fallAnimationEnabled ? 'Fall: ON' : 'Fall: OFF';
+          fallToggleBtn.classList.toggle('active-toggle', fallAnimationEnabled);
+        }
+        if (saved.circleMode !== undefined) {
+          punchHole.classList.toggle('circle-mode', Boolean(saved.circleMode));
+          shapeBtn.textContent = punchHole.classList.contains('circle-mode') ? 'Hole' : 'Island';
+        }
+        if (saved.dockHidden) {
+          uiDock.classList.add('hidden');
+          restoreBtn.classList.add('show');
+        }
+        if (saved.gyroEnabled) {
+          enableGyro();
+        }
+
+        document.querySelectorAll('#char-chips .chip').forEach(c => {
+          c.classList.toggle('selected', c.getAttribute('data-char') === String(charMode));
+        });
+        document.querySelectorAll('#timer-chips .chip').forEach(c => {
+          c.classList.toggle('selected', Number(c.getAttribute('data-sec')) === visitIntervalSec);
+        });
+        updateTimerLabel();
+      } catch (_) {}
+    }
+
+    function updateTimerLabel() {
+      if (visitIntervalSec === 0) {
+        nextVisitLabel.textContent = 'Always Out';
+        timerBadge.textContent = 'LIVE';
+      } else {
+        const mins = visitIntervalSec >= 60 ? `${visitIntervalSec / 60}m` : `${visitIntervalSec}s`;
+        nextVisitLabel.textContent = `Every ${mins}`;
+      }
+    }
+
+    function buildOverlayQuery() {
+      const ropePct = Math.round(targetRopeRatio * 100);
+      return `overlay=1&char=${encodeURIComponent(charMode)}&sec=${visitIntervalSec}&rope=${ropePct}&camy=${camTopOffset}&read=${bubbleDisplaySec}&fall=${fallAnimationEnabled ? 1 : 0}`;
+    }
+
+    function syncNativeOverlayConfig() {
+      if (window.NativeApp && typeof window.NativeApp.updateOverlayQuery === 'function') {
+        window.NativeApp.updateOverlayQuery(buildOverlayQuery());
+      }
+    }
+
+    window.setNativeTilt = function(deg) {
+      phoneTiltDeg = Math.max(-40, Math.min(40, Number(deg) || 0));
+      if (!isOverlayWindow) {
+        tiltSlider.value = Math.round(phoneTiltDeg);
+        tiltLabel.textContent = `${Math.round(phoneTiltDeg)}°`;
+      }
+    };
+
     let bubbleTimeout = null;
     function speakWisdom(category = 'random') {
       if (state === 'INSIDE' || state === 'RETRACT_ROPE') return;
@@ -579,7 +722,7 @@
       clearTimeout(bubbleTimeout);
       bubbleTimeout = setTimeout(() => {
         speechBubble.classList.remove('visible');
-      }, 5500);
+      }, bubbleDisplaySec * 1000);
     }
 
     function animateCutout(expand) {
@@ -593,6 +736,14 @@
       } else {
         activeCharIdx = Number(charMode);
       }
+      saveState();
+    }
+
+    let animFrameId = null;
+    function startRenderLoop() {
+      if (!animFrameId) {
+        animFrameId = requestAnimationFrame(loop);
+      }
     }
 
     function deployCompanion(advance = false) {
@@ -602,8 +753,10 @@
       ropeExtendVel = 0.035;
       slidePos = 0.0;
       slideVel = 0.0;
-      hangOutTimer = 22;
+      hangOutTimer = Math.max(22, bubbleDisplaySec + 2);
+      lastTickTime = Date.now();
       animateCutout(true);
+      startRenderLoop();
     }
 
     function retractCompanion() {
@@ -611,6 +764,8 @@
       state = 'CLIMB_UP';
       slideVel = 0.0;
       visitCountdown = visitIntervalSec;
+      lastTickTime = Date.now();
+      startRenderLoop();
     }
 
     function toggleCompanion() {
@@ -624,7 +779,6 @@
     punchHole.addEventListener('click', toggleCompanion);
     document.getElementById('toggle-btn').addEventListener('click', toggleCompanion);
 
-    // Teach Me Button (Cycles through Psych Tricks, Biases, Maxims)
     document.getElementById('teach-btn').addEventListener('click', () => {
       if (state === 'INSIDE') {
         deployCompanion(false);
@@ -637,7 +791,6 @@
       }
     });
 
-    // Motivate Button (Cycles through Motivation, Time, Work Check)
     document.getElementById('motivate-btn').addEventListener('click', () => {
       if (state === 'INSIDE') {
         deployCompanion(false);
@@ -654,6 +807,7 @@
       fallAnimationEnabled = !fallAnimationEnabled;
       fallToggleBtn.textContent = fallAnimationEnabled ? 'Fall: ON' : 'Fall: OFF';
       fallToggleBtn.classList.toggle('active-toggle', fallAnimationEnabled);
+      saveState();
     });
 
     document.querySelectorAll('#char-chips .chip').forEach(chip => {
@@ -667,6 +821,7 @@
           if (state === 'PERCHED') speakWisdom('motivation');
           else if (state === 'INSIDE') deployCompanion(false);
         }
+        saveState();
       });
     });
 
@@ -676,36 +831,35 @@
         chip.classList.add('selected');
         visitIntervalSec = Number(chip.getAttribute('data-sec'));
         visitCountdown = visitIntervalSec;
-        if (visitIntervalSec === 0) {
-          nextVisitLabel.textContent = 'Always Out';
-          timerBadge.textContent = 'LIVE';
-          if (state === 'INSIDE') deployCompanion(false);
-        } else {
-          const mins = visitIntervalSec >= 60 ? `${visitIntervalSec / 60}m` : `${visitIntervalSec}s`;
-          nextVisitLabel.textContent = `Every ${mins}`;
+        lastTickTime = Date.now();
+        updateTimerLabel();
+        if (visitIntervalSec === 0 && state === 'INSIDE') {
+          deployCompanion(false);
         }
+        saveState();
       });
     });
 
-    // Scheduler Interval
     setInterval(() => {
+      const now = Date.now();
+      const elapsedSec = Math.max(1, Math.round((now - lastTickTime) / 1000));
+      lastTickTime = now;
+
       if (visitIntervalSec <= 0) {
         timerBadge.textContent = 'LIVE';
         return;
       }
       if (state === 'PERCHED') {
-        hangOutTimer--;
-        timerBadge.textContent = `${hangOutTimer}s`;
-        if (hangOutTimer === 4) {
-          speakWisdom('time');
-        }
+        hangOutTimer -= elapsedSec;
+        timerBadge.textContent = `${Math.max(0, hangOutTimer)}s`;
         if (hangOutTimer <= 0) {
           retractCompanion();
         }
       } else if (state === 'INSIDE') {
-        visitCountdown--;
-        const m = Math.floor(visitCountdown / 60);
-        const s = String(visitCountdown % 60).padStart(2, '0');
+        visitCountdown -= elapsedSec;
+        const rem = Math.max(0, visitCountdown);
+        const m = Math.floor(rem / 60);
+        const s = String(rem % 60).padStart(2, '0');
         timerBadge.textContent = `${m}:${s}`;
         if (visitCountdown <= 0) {
           visitCountdown = visitIntervalSec;
@@ -715,27 +869,40 @@
       }
     }, 1000);
 
-    const shapeBtn = document.getElementById('shape-btn');
     shapeBtn.addEventListener('click', () => {
       punchHole.classList.toggle('circle-mode');
       shapeBtn.textContent = punchHole.classList.contains('circle-mode') ? 'Hole' : 'Island';
+      saveState();
     });
 
-    const uiDock = document.getElementById('ui-dock');
-    const restoreBtn = document.getElementById('restore-ui-btn');
     document.getElementById('hide-btn').addEventListener('click', () => {
       uiDock.classList.add('hidden');
       restoreBtn.classList.add('show');
+      saveState();
     });
     restoreBtn.addEventListener('click', () => {
       uiDock.classList.remove('hidden');
       restoreBtn.classList.remove('show');
+      saveState();
+    });
+
+    readTimeSlider.addEventListener('input', (e) => {
+      bubbleDisplaySec = Number(e.target.value);
+      readTimeLabel.textContent = `${bubbleDisplaySec}s`;
+      hangOutTimer = Math.max(22, bubbleDisplaySec + 2);
+      saveState();
+    });
+
+    camYSlider.addEventListener('input', (e) => {
+      updateCameraPosition(e.target.value);
+      saveState();
     });
 
     ropeSlider.addEventListener('input', (e) => {
       targetRopeRatio = Number(e.target.value) / 100;
       ropeLabel.textContent = `${e.target.value}%`;
       if (state === 'INSIDE') deployCompanion(false);
+      saveState();
     });
 
     tiltSlider.addEventListener('input', (e) => {
@@ -743,7 +910,6 @@
       tiltLabel.textContent = `${Math.round(phoneTiltDeg)}°`;
     });
 
-    const gyroBtn = document.getElementById('gyro-btn');
     function onDeviceOrientation(e) {
       if (e.gamma !== null) {
         phoneTiltDeg = Math.max(-40, Math.min(40, e.gamma));
@@ -751,18 +917,52 @@
         tiltLabel.textContent = `${Math.round(phoneTiltDeg)}°`;
       }
     }
-    gyroBtn.addEventListener('click', async () => {
+
+    async function enableGyro() {
       if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
         try {
           const res = await DeviceOrientationEvent.requestPermission();
           if (res === 'granted') {
             window.addEventListener('deviceorientation', onDeviceOrientation);
+            gyroEnabled = true;
             gyroBtn.textContent = 'Gyro: ON';
           }
         } catch (_) {}
       } else {
         window.addEventListener('deviceorientation', onDeviceOrientation);
+        gyroEnabled = true;
         gyroBtn.textContent = 'Gyro: ON';
+      }
+      if (window.NativeApp && typeof window.NativeApp.setSensorEnabled === 'function') {
+        window.NativeApp.setSensorEnabled(true);
+      }
+      saveState();
+    }
+
+    gyroBtn.addEventListener('click', enableGyro);
+
+    function refreshOverlayBtnState() {
+      if (window.NativeApp && typeof window.NativeApp.isOverlayRunning === 'function') {
+        const running = window.NativeApp.isOverlayRunning();
+        sysOverlayBtn.textContent = running ? 'Stop Overlay ⏹️' : 'Float Over Apps 📌';
+      }
+    }
+
+    sysOverlayBtn.addEventListener('click', () => {
+      if (window.NativeApp && typeof window.NativeApp.toggleSystemOverlay === 'function') {
+        window.NativeApp.toggleSystemOverlay(buildOverlayQuery());
+        setTimeout(refreshOverlayBtnState, 500);
+      } else {
+        document.body.classList.toggle('transparent-overlay');
+        resize();
+      }
+    });
+
+    batteryBtn.addEventListener('click', () => {
+      if (window.NativeApp && typeof window.NativeApp.requestBatteryExemption === 'function') {
+        window.NativeApp.requestBatteryExemption();
+      } else {
+        speakWisdom('motivation');
       }
     });
 
@@ -777,7 +977,25 @@
       }
     });
 
-    // === PHYSICS UPDATE ===
+    window.history.pushState({ page: 1 }, "", "");
+    window.addEventListener('popstate', () => {
+      if (!uiDock.classList.contains('hidden')) {
+        uiDock.classList.add('hidden');
+        restoreBtn.classList.add('show');
+        saveState();
+      }
+      window.history.pushState({ page: 1 }, "", "");
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        refreshOverlayBtnState();
+      }
+    });
+
+    loadState();
+    setTimeout(refreshOverlayBtnState, 400);
+
     function updatePhysics() {
       time += 0.016;
 
@@ -872,7 +1090,6 @@
       gazeX += (targetGazeX - gazeX) * 0.12;
     }
 
-    // === RENDERERS ===
     function drawBraidedRopeAndKnot(ax, ay, mx, my, kx, ky) {
       ctx.save();
       ctx.beginPath();
@@ -1092,7 +1309,6 @@
       ctx.closePath(); ctx.fill();
     }
 
-    // === RENDER LOOP ===
     function render() {
       ctx.clearRect(0, 0, width, height);
       if (state === 'INSIDE') return;
@@ -1114,9 +1330,10 @@
         const charY = invT * invT * anchorY + 2 * invT * t * midY + t * t * knotY;
 
         if (speechBubble.classList.contains('visible')) {
-          const clampedX = Math.max(130, Math.min(width - 130, charX));
+          const halfBubble = Math.min(135, width * 0.45);
+          const clampedX = Math.max(halfBubble + 6, Math.min(width - halfBubble - 6, charX));
           speechBubble.style.left = `${clampedX}px`;
-          speechBubble.style.top = `${Math.max(75, charY - 82)}px`;
+          speechBubble.style.top = `${Math.max(70, charY - 82)}px`;
         }
 
         const breathe = Math.sin(time * 2.5) * 1.2;
@@ -1202,9 +1419,14 @@
     function loop() {
       updatePhysics();
       render();
-      requestAnimationFrame(loop);
+      if (state === 'INSIDE') {
+        ctx.clearRect(0, 0, width, height);
+        animFrameId = null;
+        return;
+      }
+      animFrameId = requestAnimationFrame(loop);
     }
-    requestAnimationFrame(loop);
+    startRenderLoop();
   </script>
 </body>
 </html>
