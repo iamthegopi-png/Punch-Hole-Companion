@@ -82,8 +82,8 @@ jobs:
                   applicationId = "com.companion.punchhole"
                   minSdk = 26
                   targetSdk = 34
-                  versionCode = 2
-                  versionName = "2.0-kotlin"
+                  versionCode = 3
+                  versionName = "3.0-kotlin"
               }
 
               buildTypes {
@@ -212,7 +212,9 @@ jobs:
                   "Break your big project into three tiny tasks. Which one starts right now?",
                   "Clear your workspace and close extra tabs. A clean space creates a sharp mind.",
                   "Single-tasking is a superpower. Do one thing right now with 100% presence.",
-                  "Drink a glass of water! Even 2% dehydration drops cognitive focus by 15%."
+                  "Drink a glass of water! Even 2% dehydration drops cognitive focus by 15%.",
+                  "Ask yourself: 'If I only accomplished one thing today, what would make me proud?'",
+                  "20-20-20 Eye Reset: Look at something 20 feet away for 20 seconds right now."
               )
               private val psychPrinciples = listOf(
                   "Benjamin Franklin Effect" to "Want someone to like you? Ask them for a small favor. Our brains justify helping someone by deciding we like them.",
@@ -223,7 +225,10 @@ jobs:
                   "The Pygmalion Effect" to "Higher expectations directly lead to higher performance—both in how you treat others and how you view yourself.",
                   "Scarcity Principle" to "People value things more when availability is limited. Treat your time and attention as your scarcest assets.",
                   "Reciprocity Norm" to "Giving value, kindness, or recognition first creates a natural psychological desire for others to reciprocate.",
-                  "Tactical Silence" to "In negotiations or deep conversations, pause for 4 seconds after someone speaks. They will often reveal the real truth."
+                  "Tactical Silence" to "In negotiations or deep conversations, pause for 4 seconds after someone speaks. They will often reveal the real truth.",
+                  "Labeling Emotion" to "Saying 'It sounds like you feel frustrated' deactivates the brain's threat center and builds instant trust.",
+                  "Implementation Intentions" to "Saying 'I will do X at time Y in place Z' triples your follow-through compared to vague goals.",
+                  "The Pratfall Effect" to "Competent people become more likable when they admit a small flaw. Perfection creates distance; authenticity connects."
               )
               private val cognitiveBiases = listOf(
                   "Dunning-Kruger Effect" to "Beginners often overestimate their skill, while experts underestimate theirs. Stay curious and keep learning!",
@@ -232,7 +237,10 @@ jobs:
                   "Anchoring Bias" to "We rely too heavily on the first number or idea we hear. Always reset and evaluate value from scratch.",
                   "Sunk Cost Fallacy" to "Continuing a bad project just because you already spent time or money on it. Only future value matters!",
                   "Attribution Error" to "We judge others by their character, but excuse ourselves by our situation. Practice generous empathy.",
-                  "Availability Heuristic" to "We judge probability by how easily examples pop into memory. Look at real statistics, not dramatic headlines."
+                  "Availability Heuristic" to "We judge probability by how easily examples pop into memory. Look at real statistics, not dramatic headlines.",
+                  "Spotlight Effect" to "We think everyone notices our stumbles, but people are 99% focused on themselves. Move boldly!",
+                  "Survivorship Bias" to "Studying only winners hides the thousands who used the exact same strategy and failed. Study failure too.",
+                  "Planning Fallacy" to "We always assume tasks will go according to the best-case scenario. Multiply your time estimates by 1.5x."
               )
               private val stoicMaxims = listOf(
                   "Marcus Aurelius" to "'The impediment to action advances action. What stands in the way becomes the way.'",
@@ -242,7 +250,9 @@ jobs:
                   "Epictetus" to "'Make the best use of what is in your power, and take the rest as it happens.'",
                   "Viktor Frankl" to "'Between stimulus and response there is a space. In that space is our power to choose our response.'",
                   "Seneca on Fear" to "'We suffer more often in imagination than in reality.'",
-                  "Marcus Aurelius" to "'You have power over your mind—not outside events. Realize this, and you will find strength.'"
+                  "Marcus Aurelius" to "'You have power over your mind—not outside events. Realize this, and you will find strength.'",
+                  "Miyamoto Musashi" to "'Do nothing which is of no use. Step by step walk the thousand-mile road.'",
+                  "Naval Ravikant" to "'All the returns in life—whether in wealth, relationships, or knowledge—come from compound interest.'"
               )
               private val mentalModels = listOf(
                   "Pareto 80/20 Rule" to "80% of your results come from 20% of your efforts. Identify and double down on your highest-leverage 20%.",
@@ -250,7 +260,9 @@ jobs:
                   "First Principles" to "Break complex problems down to their fundamental truths and build up from there, rather than copying others.",
                   "Inversion Model" to "Instead of asking how to succeed, ask 'What would guarantee failure?'—and systematically avoid those traps.",
                   "Occam's Razor" to "Among competing explanations, the simplest one with the fewest assumptions is usually the right one.",
-                  "Goodhart's Law" to "When a measure becomes a target, it ceases to be a good measure. Focus on real value, not vanity metrics."
+                  "Second-Order Thinking" to "Don't just ask 'What happens next?' Ask 'And then what happens after that?' Look 3 steps ahead.",
+                  "Goodhart's Law" to "When a measure becomes a target, it ceases to be a good measure. Focus on real value, not vanity metrics.",
+                  "Gall's Law" to "Every complex system that works evolved from a simple system that worked. Build the simple version first!"
               )
 
               private val decks = mutableMapOf<String, ArrayDeque<Int>>()
@@ -268,7 +280,7 @@ jobs:
                   } else type
 
                   return when (chosen) {
-                      "motivation" -> WisdomItem("Motivation 🔥", null, nextFromDeck("mot", motivation))
+                      "motivation" -> WisdomItem("Motivation 🔥", "Daily Drive", nextFromDeck("mot", motivation))
                       "time" -> {
                           val cal = Calendar.getInstance()
                           val h24 = cal.get(Calendar.HOUR_OF_DAY)
@@ -280,9 +292,9 @@ jobs:
                               h24 < 17 -> "It's $h12:$min $ampm. Afternoon power hours! Stay hydrated and sharp! 🚀"
                               else -> "It's $h12:$min $ampm. Wrap up your key goals and recharge your mind! 🌙"
                           }
-                          WisdomItem("Time Check ⏰", null, msg)
+                          WisdomItem("Time Check ⏰", "Current Time: $h12:$min $ampm", msg)
                       }
-                      "work" -> WisdomItem("Focus & Action 💼", null, nextFromDeck("work", workChecks))
+                      "work" -> WisdomItem("Focus & Action 💼", "Deep Work Sprint", nextFromDeck("work", workChecks))
                       "trick" -> {
                           val pair = nextFromDeck("trick", psychPrinciples)
                           WisdomItem("Psych Principle 🧠", pair.first, pair.second)
@@ -311,12 +323,10 @@ jobs:
           import android.graphics.*
           import android.os.SystemClock
           import android.text.Layout
-          import android.text.SpannableStringBuilder
-          import android.text.Spanned
           import android.text.StaticLayout
           import android.text.TextPaint
-          import android.text.style.StyleSpan
           import android.view.Choreographer
+          import android.view.GestureDetector
           import android.view.MotionEvent
           import android.view.View
           import kotlin.math.*
@@ -325,31 +335,35 @@ jobs:
           class CompanionOverlayView(
               context: Context,
               val isSystemOverlay: Boolean,
-              var onStateChanged: ((Boolean) -> Unit)? = null
+              var onStateChanged: ((Boolean) -> Unit)? = null,
+              var onCharacterBoundsUpdated: ((Float, Float, Boolean) -> Unit)? = null
           ) : View(context), Choreographer.FrameCallback {
 
               enum class State { INSIDE, DROP_ROPE, SLIDE_DOWN, PERCHED, CLIMB_UP, RETRACT_ROPE }
               enum class CharType(val displayName: String, val accentColor: Int) {
-                  NINJA("SHINOBI", Color.parseColor("#E01937")),
-                  CAT("KURO NEKO", Color.parseColor("#F59E0B")),
-                  BOT("BIBI BOT", Color.parseColor("#06B6D4")),
-                  FOX("KITSUNE", Color.parseColor("#F97316"))
+                  NINJA("SHINOBI", Color.parseColor("#FF2E54")),
+                  CAT("KURO NEKO", Color.parseColor("#FBBF24")),
+                  BOT("BIBI BOT", Color.parseColor("#22D3EE")),
+                  FOX("KITSUNE", Color.parseColor("#FB923C"))
               }
 
               private val density = resources.displayMetrics.density
               private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-              private val textPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
-                  color = Color.parseColor("#0F1429")
-                  textSize = 11.5f * density
-              }
-              private val headerPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
-                  textSize = 9.5f * density
+              private val titlePaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+                  color = Color.WHITE
                   typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
               }
-              private val badgeTextPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
-                  textSize = 9.5f * density
-                  color = Color.argb(200, 255, 255, 255)
-                  typeface = Typeface.MONOSPACE
+              private val bodyPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+                  color = Color.parseColor("#F1F5F9")
+                  typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+              }
+              private val headerPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+                  textSize = 11.5f * density
+                  typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+              }
+              private val hintPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+                  textSize = 10f * density
+                  color = Color.parseColor("#94A3B8")
               }
               private val path = Path()
               private val rectF = RectF()
@@ -364,11 +378,12 @@ jobs:
               var activeCharIdx: Int = 0
               var visitIntervalSec: Int = 120
               var visitCountdown: Int = 120
-              var hangOutTimer: Int = 22
+              var hangOutTimer: Int = 24
               var camTopOffsetDp: Float = 6f
               var camLeftOffsetDp: Float = 0f
-              var targetRopeRatio: Float = 0.36f
-              var bubbleDisplaySec: Int = 8
+              var targetRopeRatio: Float = 0.28f
+              var bubbleDisplaySec: Int = 9
+              var textSizeSp: Int = 16
               var fallAnimationEnabled: Boolean = true
               var circleCutoutMode: Boolean = true
               var isLandscapePaused: Boolean = false
@@ -406,10 +421,54 @@ jobs:
 
               private var currentWisdom: WisdomItem? = null
               private var bubbleStartMs = 0L
-              private var bubbleDurationMs = 8000L
-              private var cachedStaticLayout: StaticLayout? = null
+              private var bubbleDurationMs = 9000L
+              private var cachedTitleLayout: StaticLayout? = null
+              private var cachedBodyLayout: StaticLayout? = null
               private var loopActive = false
               private var lastSecondTickMs = SystemClock.elapsedRealtime()
+
+              private var lastCharXDp = 0f
+              private var lastCharYDp = 0f
+
+              private val gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
+                  override fun onDown(e: MotionEvent): Boolean = true
+
+                  override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                      val tapXDp = e.x / density
+                      val tapYDp = e.y / density
+                      val widthDp = width / density
+                      val anchorX = widthDp / 2f + camLeftOffsetDp
+                      val anchorY = camTopOffsetDp + 17f
+
+                      if (hypot(tapXDp - anchorX, tapYDp - anchorY) < 48f) {
+                          toggleCompanion()
+                          return true
+                      }
+                      if (state != State.INSIDE && hypot(tapXDp - lastCharXDp, tapYDp - (lastCharYDp - 28f)) < 75f) {
+                          onCharacterSingleTap()
+                          return true
+                      }
+                      return false
+                  }
+
+                  override fun onDoubleTap(e: MotionEvent): Boolean {
+                      val tapXDp = e.x / density
+                      val tapYDp = e.y / density
+                      if (state != State.INSIDE && hypot(tapXDp - lastCharXDp, tapYDp - (lastCharYDp - 28f)) < 85f) {
+                          retractCompanion()
+                          return true
+                      }
+                      return false
+                  }
+
+                  override fun onScroll(e1: MotionEvent?, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
+                      if (state == State.PERCHED) {
+                          applyHorizontalImpulse(-distanceX)
+                          return true
+                      }
+                      return false
+                  }
+              })
 
               private val tickerRunnable = object : Runnable {
                   override fun run() {
@@ -454,6 +513,7 @@ jobs:
                   if (state == State.INSIDE || isLandscapePaused) {
                       loopActive = false
                       onStateChanged?.invoke(false)
+                      onCharacterBoundsUpdated?.invoke(0f, 0f, false)
                       invalidate()
                       return
                   }
@@ -481,9 +541,26 @@ jobs:
                       if (visitCountdown <= 0) {
                           visitCountdown = visitIntervalSec
                           deployCompanion(true)
-                          postDelayed({ speakWisdom("random") }, 1200L)
+                          postDelayed({ speakWisdom("random") }, 1100L)
                       }
                   }
+              }
+
+              fun onCharacterSingleTap() {
+                  if (state == State.INSIDE || state == State.RETRACT_ROPE) {
+                      deployCompanion(true)
+                  } else {
+                      landingSquashVel = 3.2f
+                      ropeStretchVel = 3.0f
+                      ropeAngVel += if (Random.nextBoolean()) 0.018f else -0.018f
+                      hangOutTimer = max(hangOutTimer, bubbleDisplaySec + 6)
+                      speakWisdom("random")
+                  }
+              }
+
+              fun applyHorizontalImpulse(deltaPx: Float) {
+                  ropeAngVel = (ropeAngVel + (deltaPx / density) * 0.0012f).coerceIn(-0.08f, 0.08f)
+                  startLoop()
               }
 
               fun deployCompanion(advance: Boolean = false) {
@@ -500,7 +577,7 @@ jobs:
                   ropeExtendVel = 0.035f
                   slidePos = 0f
                   slideVel = 0f
-                  hangOutTimer = max(22, bubbleDisplaySec + 4)
+                  hangOutTimer = max(24, bubbleDisplaySec + 6)
                   lastSecondTickMs = SystemClock.elapsedRealtime()
                   onStateChanged?.invoke(true)
                   startLoop()
@@ -516,29 +593,42 @@ jobs:
               }
 
               fun toggleCompanion() {
-                  if (state == State.INSIDE || state == State.RETRACT_ROPE) deployCompanion(true) else retractCompanion()
+                  if (state == State.INSIDE || state == State.RETRACT_ROPE) {
+                      deployCompanion(true)
+                  } else {
+                      retractCompanion()
+                  }
+              }
+
+              fun rebuildBubbleLayouts() {
+                  val item = currentWisdom ?: return
+                  val maxTextWidthPx = (min(width.takeIf { it > 0 } ?: (resources.displayMetrics.widthPixels), (310 * density).toInt()) - (36 * density).toInt()).coerceAtLeast((200 * density).toInt())
+
+                  titlePaint.textSize = (textSizeSp + 1f) * density
+                  bodyPaint.textSize = textSizeSp * density
+
+                  cachedTitleLayout = if (!item.title.isNullOrBlank()) {
+                      StaticLayout.Builder.obtain(item.title, 0, item.title.length, titlePaint, maxTextWidthPx)
+                          .setAlignment(Layout.Alignment.ALIGN_NORMAL)
+                          .setLineSpacing(0f, 1.1f)
+                          .build()
+                  } else null
+
+                  cachedBodyLayout = StaticLayout.Builder.obtain(item.body, 0, item.body.length, bodyPaint, maxTextWidthPx)
+                      .setAlignment(Layout.Alignment.ALIGN_NORMAL)
+                      .setLineSpacing(0f, 1.22f)
+                      .build()
               }
 
               fun speakWisdom(category: String = "random") {
                   if (state == State.INSIDE || state == State.RETRACT_ROPE || isLandscapePaused) return
-                  val item = WisdomRepository.getWisdom(category)
-                  currentWisdom = item
+                  currentWisdom = WisdomRepository.getWisdom(category)
                   bubbleDurationMs = bubbleDisplaySec * 1000L
                   bubbleStartMs = SystemClock.elapsedRealtime()
-
-                  val sb = SpannableStringBuilder()
-                  if (item.title != null) {
-                      sb.append(item.title).append(": ")
-                      sb.setSpan(StyleSpan(Typeface.BOLD), 0, item.title.length + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-                  }
-                  sb.append(item.body)
-
-                  val maxBubbleWidthPx = min((252f * density).toInt(), (width * 0.84f).toInt().coerceAtLeast(160))
-                  cachedStaticLayout = StaticLayout.Builder.obtain(sb, 0, sb.length, textPaint, maxBubbleWidthPx)
-                      .setAlignment(Layout.Alignment.ALIGN_NORMAL)
-                      .setLineSpacing(0f, 1.15f)
-                      .build()
+                  hangOutTimer = max(hangOutTimer, bubbleDisplaySec + 5)
+                  rebuildBubbleLayouts()
                   startLoop()
+                  invalidate()
               }
 
               private fun updatePhysics() {
@@ -567,11 +657,11 @@ jobs:
                               landingSquashVel = 3.5f
                               ropeStretchVel = 4.0f
                               ropeAngVel += 0.013f
-                              postDelayed({ if (state == State.PERCHED) speakWisdom("random") }, 400L)
+                              postDelayed({ if (state == State.PERCHED) speakWisdom("random") }, 350L)
                           }
                       }
                       State.CLIMB_UP -> {
-                          slidePos -= 0.028f
+                          slidePos -= 0.032f
                           ropeAngVel *= 0.9f
                           if (slidePos <= 0.02f) {
                               slidePos = 0f
@@ -598,7 +688,7 @@ jobs:
                   val effectiveTargetAngle = smoothTiltRad * 0.36f
                   ropeAngVel += (-0.026f * (ropeAngle - effectiveTargetAngle) + breeze)
                   ropeAngVel *= 0.935f
-                  ropeAngle = (ropeAngle + ropeAngVel).coerceIn(-0.30f, 0.30f)
+                  ropeAngle = (ropeAngle + ropeAngVel).coerceIn(-0.32f, 0.32f)
 
                   midRopeBow += (-ropeAngVel * 135f - midRopeBow) * 0.18f
 
@@ -645,35 +735,20 @@ jobs:
                   val widthDp = width / density
                   val heightDp = height / density
                   val anchorX = widthDp / 2f + camLeftOffsetDp
-                  val anchorY = camTopOffsetDp + 17f
+                  val anchorY = camTopOffsetDp + 16f
 
                   canvas.save()
                   canvas.scale(density, density)
 
                   if (!isSystemOverlay) {
-                      val pillW = if (circleCutoutMode) 35f else 126f
-                      val pillH = 35f
+                      val pillW = 36f
+                      val pillH = 36f
                       paint.style = Paint.Style.FILL
                       paint.color = Color.parseColor("#050608")
-                      rectF.set(anchorX - pillW / 2f, camTopOffsetDp, anchorX + pillW / 2f, camTopOffsetDp + pillH)
+                      rectF.set(anchorX - pillW / 2f, camTopOffsetDp - 2f, anchorX + pillW / 2f, camTopOffsetDp + pillH - 2f)
                       canvas.drawRoundRect(rectF, 999f, 999f, paint)
-
-                      val lensX = if (circleCutoutMode) anchorX else anchorX + pillW / 2f - 16f
-                      paint.color = Color.parseColor("#162038")
-                      canvas.drawCircle(lensX, camTopOffsetDp + pillH / 2f, 6f, paint)
-
-                      if (!circleCutoutMode) {
-                          val badgeStr = when {
-                              visitIntervalSec <= 0 -> "LIVE"
-                              state == State.PERCHED -> "${max(0, hangOutTimer)}s"
-                              state == State.INSIDE -> String.format("%d:%02d", max(0, visitCountdown) / 60, max(0, visitCountdown) % 60)
-                              else -> "OUT"
-                          }
-                          canvas.save()
-                          canvas.scale(1f / density, 1f / density)
-                          canvas.drawText(badgeStr, (anchorX - pillW / 2f + 12f) * density, (camTopOffsetDp + 21f) * density, badgeTextPaint)
-                          canvas.restore()
-                      }
+                      paint.color = Color.parseColor("#1E2942")
+                      canvas.drawCircle(anchorX, camTopOffsetDp + 16f, 6.5f, paint)
                   }
 
                   if (state == State.INSIDE) {
@@ -681,7 +756,7 @@ jobs:
                       return
                   }
 
-                  val maxRopeLen = heightDp * targetRopeRatio
+                  val maxRopeLen = min(heightDp * targetRopeRatio, 230f)
                   val currentRopeLen = maxRopeLen * ropeExtend + ropeStretch
                   val sinA = sin(ropeAngle)
                   val cosA = cos(ropeAngle)
@@ -699,10 +774,19 @@ jobs:
                       val charX = invT * invT * anchorX + 2f * invT * t * midX + t * t * knotX
                       val charY = invT * invT * anchorY + 2f * invT * t * midY + t * t * knotY
 
+                      lastCharXDp = charX
+                      lastCharYDp = charY
+                      onCharacterBoundsUpdated?.invoke(charX - widthDp / 2f, charY - 32f, state == State.PERCHED)
+
                       drawCharacterPose(canvas, char, charX, charY, currentRopeLen)
-                      drawSpeechBubbleIfVisible(canvas, char, charX, charY, widthDp)
+                      canvas.restore()
+
+                      // Draw Speech Bubble in native pixel coordinates BELOW the character
+                      drawSpeechBubbleBelowCharacter(canvas, char, charX * density, (knotY + 30f) * density)
+                  } else {
+                      onCharacterBoundsUpdated?.invoke(0f, 0f, false)
+                      canvas.restore()
                   }
-                  canvas.restore()
               }
 
               private fun drawBraidedRopeAndKnot(canvas: Canvas, ax: Float, ay: Float, mx: Float, my: Float, kx: Float, ky: Float) {
@@ -811,7 +895,7 @@ jobs:
                   val lFootX = lerp(-1f, footLag - 6f - scrambleKick)
                   val lFootY = lerp(-6f + slideTuck - climbLegOffset, 55f - abs(footLag) * 0.2f - scrambleKick * 0.5f)
 
-                  val holeScale = min(1f, slidePos * 4.5f)
+                  val holeScale = min(1.12f, slidePos * 4.5f)
                   val rotAngle = -ropeAngle * (1f - b * 0.5f)
                   val limbColor = when (char) {
                       CharType.BOT -> Color.parseColor("#CBD5E1")
@@ -1045,69 +1129,94 @@ jobs:
                   path.close(); canvas.drawPath(path, paint)
               }
 
-              private fun drawSpeechBubbleIfVisible(canvas: Canvas, char: CharType, charX: Float, charY: Float, widthDp: Float) {
+              private fun drawSpeechBubbleBelowCharacter(canvas: Canvas, char: CharType, charXPx: Float, topYPx: Float) {
                   val wisdom = currentWisdom ?: return
-                  val layout = cachedStaticLayout ?: return
+                  val bodyLayout = cachedBodyLayout ?: return
                   val elapsed = SystemClock.elapsedRealtime() - bubbleStartMs
-                  if (elapsed >= bubbleDurationMs) { currentWisdom = null; return }
+                  if (elapsed >= bubbleDurationMs) {
+                      currentWisdom = null
+                      return
+                  }
 
                   val progress = (1f - elapsed.toFloat() / bubbleDurationMs).coerceIn(0f, 1f)
-                  val textW = (layout.width / density)
-                  val textH = (layout.height / density)
-                  val boxW = textW + 28f
-                  val boxH = textH + 38f
+                  val padH = 16f * density
+                  val padV = 14f * density
+                  val headerH = 22f * density
+                  val titleH = (cachedTitleLayout?.height?.toFloat() ?: 0f) + if (cachedTitleLayout != null) 6f * density else 0f
+                  val footerH = 20f * density
 
-                  val clampedCenterX = charX.coerceIn(boxW / 2f + 8f, widthDp - boxW / 2f - 8f)
-                  val bottomY = max(boxH + 14f, charY - 76f)
-                  val leftX = clampedCenterX - boxW / 2f
-                  val topY = bottomY - boxH
+                  val boxW = bodyLayout.width + padH * 2f
+                  val boxH = padV * 2f + headerH + titleH + bodyLayout.height + footerH
 
-                  paint.style = Paint.Style.FILL; paint.color = Color.argb(65, 10, 14, 35)
-                  rectF.set(leftX, topY + 4f, leftX + boxW, bottomY + 4f); canvas.drawRoundRect(rectF, 16f, 16f, paint)
+                  val leftX = (charXPx - boxW / 2f).coerceIn(10f * density, (width - boxW - 10f * density).coerceAtLeast(10f * density))
+                  val topY = topYPx.coerceAtLeast(95f * density)
+                  val bottomY = topY + boxH
 
-                  paint.color = Color.argb(250, 255, 255, 255)
-                  rectF.set(leftX, topY, leftX + boxW, bottomY); canvas.drawRoundRect(rectF, 16f, 16f, paint)
+                  // Upward speech pointer triangle pointing to the companion
+                  val pointerX = charXPx.coerceIn(leftX + 24f * density, leftX + boxW - 24f * density)
+                  paint.style = Paint.Style.FILL
+                  paint.color = Color.parseColor("#F20F172A")
+                  path.reset()
+                  path.moveTo(pointerX - 10f * density, topY + 1f)
+                  path.lineTo(pointerX, topY - 10f * density)
+                  path.lineTo(pointerX + 10f * density, topY + 1f)
+                  path.close()
+                  canvas.drawPath(path, paint)
+
+                  // High-Contrast Dark Glass Card Shadow & Body
+                  paint.color = Color.argb(110, 0, 0, 0)
+                  rectF.set(leftX, topY + 5f * density, leftX + boxW, bottomY + 5f * density)
+                  canvas.drawRoundRect(rectF, 18f * density, 18f * density, paint)
+
+                  paint.color = Color.parseColor("#F20F172A")
+                  rectF.set(leftX, topY, leftX + boxW, bottomY)
+                  canvas.drawRoundRect(rectF, 18f * density, 18f * density, paint)
+
+                  // Glowing Accent Border
+                  paint.style = Paint.Style.STROKE
+                  paint.strokeWidth = 1.5f * density
+                  paint.color = char.accentColor
+                  canvas.drawRoundRect(rectF, 18f * density, 18f * density, paint)
+
+                  // Speaker Name & Category Pill
+                  paint.style = Paint.Style.FILL
+                  headerPaint.color = char.accentColor
+                  canvas.drawText(char.displayName, leftX + padH, topY + padV + 11f * density, headerPaint)
+
+                  headerPaint.color = Color.parseColor("#CBD5E1")
+                  val catWidth = headerPaint.measureText(wisdom.categoryBadge)
+                  canvas.drawText(wisdom.categoryBadge, leftX + boxW - padH - catWidth, topY + padV + 11f * density, headerPaint)
+
+                  var cursorY = topY + padV + headerH
+
+                  // Bold Title Layout
+                  cachedTitleLayout?.let { tLayout ->
+                      canvas.save()
+                      canvas.translate(leftX + padH, cursorY)
+                      titlePaint.color = char.accentColor
+                      tLayout.draw(canvas)
+                      canvas.restore()
+                      cursorY += tLayout.height + 6f * density
+                  }
+
+                  // Crisp Body Layout
+                  canvas.save()
+                  canvas.translate(leftX + padH, cursorY)
+                  bodyLayout.draw(canvas)
+                  canvas.restore()
+
+                  // Touch Hint & Reading Progress Bar at Bottom
+                  val hintText = "Tap friend: Next 💡  •  Double-tap: Hide"
+                  canvas.drawText(hintText, leftX + padH, bottomY - 10f * density, hintPaint)
 
                   paint.color = char.accentColor
-                  rectF.set(leftX + 10f, bottomY - 3.5f, leftX + 10f + (boxW - 20f) * progress, bottomY - 0.5f)
-                  canvas.drawRoundRect(rectF, 2f, 2f, paint)
-
-                  canvas.save()
-                  canvas.scale(1f / density, 1f / density)
-                  headerPaint.color = char.accentColor
-                  canvas.drawText(char.displayName, (leftX + 14f) * density, (topY + 17f) * density, headerPaint)
-
-                  headerPaint.color = Color.parseColor("#475569")
-                  val catWidth = headerPaint.measureText(wisdom.categoryBadge)
-                  canvas.drawText(wisdom.categoryBadge, (leftX + boxW - 14f) * density - catWidth, (topY + 17f) * density, headerPaint)
-
-                  canvas.translate((leftX + 14f) * density, (topY + 24f) * density)
-                  layout.draw(canvas)
-                  canvas.restore()
+                  rectF.set(leftX + padH, bottomY - 4.5f * density, leftX + padH + (boxW - padH * 2f) * progress, bottomY - 1.5f * density)
+                  canvas.drawRoundRect(rectF, 2f * density, 2f * density, paint)
               }
 
               override fun onTouchEvent(event: MotionEvent): Boolean {
                   if (isSystemOverlay) return false
-                  if (event.action == MotionEvent.ACTION_DOWN) {
-                      val tapXDp = event.x / density; val tapYDp = event.y / density
-                      val widthDp = width / density; val heightDp = height / density
-                      val anchorX = widthDp / 2f + camLeftOffsetDp; val anchorY = camTopOffsetDp + 17f
-
-                      if (hypot(tapXDp - anchorX, tapYDp - anchorY) < 48f) {
-                          toggleCompanion(); return true
-                      }
-                      if (state == State.PERCHED) {
-                          val totalLen = heightDp * targetRopeRatio * ropeExtend + ropeStretch
-                          val knotX = anchorX + sin(ropeAngle) * totalLen
-                          val knotY = anchorY + cos(ropeAngle) * totalLen
-                          if (hypot(tapXDp - knotX, tapYDp - (knotY - 30f)) < 68f) {
-                              landingSquashVel = 2.2f
-                              speakWisdom("random")
-                              return true
-                          }
-                      }
-                  }
-                  return super.onTouchEvent(event)
+                  return gestureDetector.onTouchEvent(event) || super.onTouchEvent(event)
               }
           }
           EOF
@@ -1119,13 +1228,13 @@ jobs:
           import android.content.*
           import android.content.pm.ServiceInfo
           import android.content.res.Configuration
+          import android.graphics.Color
           import android.graphics.PixelFormat
           import android.hardware.*
           import android.os.Build
           import android.os.IBinder
-          import android.view.Gravity
-          import android.view.View
-          import android.view.WindowManager
+          import android.view.*
+          import kotlin.math.roundToInt
 
           class OverlayService : Service(), SensorEventListener, SharedPreferences.OnSharedPreferenceChangeListener {
 
@@ -1137,6 +1246,10 @@ jobs:
               private lateinit var windowManager: WindowManager
               private lateinit var prefs: SharedPreferences
               private var companionView: CompanionOverlayView? = null
+              private var punchHoleTouchView: View? = null
+              private var characterTouchView: View? = null
+              private lateinit var punchHoleParams: WindowManager.LayoutParams
+              private lateinit var charTouchParams: WindowManager.LayoutParams
               private var sensorManager: SensorManager? = null
 
               private var isScreenOn = true
@@ -1180,8 +1293,9 @@ jobs:
                   isPortrait = resources.configuration.orientation != Configuration.ORIENTATION_LANDSCAPE
 
                   val dm = resources.displayMetrics
-                  val widthPx = minOf(dm.widthPixels, (340 * dm.density).toInt())
-                  val heightPx = (550 * dm.density).toInt()
+                  val density = dm.density
+                  val widthPx = minOf(dm.widthPixels, (360 * density).toInt())
+                  val heightPx = (620 * density).toInt()
 
                   val layoutType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                       WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
@@ -1190,7 +1304,8 @@ jobs:
                       WindowManager.LayoutParams.TYPE_PHONE
                   }
 
-                  val params = WindowManager.LayoutParams(
+                  // 1. Visual Layer (100% Click-Through so speech bubble never blocks screen)
+                  val visualParams = WindowManager.LayoutParams(
                       widthPx,
                       heightPx,
                       layoutType,
@@ -1201,27 +1316,124 @@ jobs:
                       PixelFormat.TRANSLUCENT
                   ).apply {
                       gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-                      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                          layoutInDisplayCutoutMode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                              WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
-                          } else {
-                              WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
-                          }
-                      }
+                      applyCutoutFlag(this)
                   }
 
-                  companionView = CompanionOverlayView(this, isSystemOverlay = true) { out ->
-                      isCompanionOut = out
-                      updateSensorRegistration()
-                  }.also { view ->
+                  // 2. Character Interactive Hitbox Layer (Single-tap: Next quote, Double-tap: Climb up, Drag: Swing)
+                  charTouchParams = WindowManager.LayoutParams(
+                      (92 * density).toInt(),
+                      (105 * density).toInt(),
+                      layoutType,
+                      WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                              WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                              WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                      PixelFormat.TRANSLUCENT
+                  ).apply {
+                      gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+                      x = 0
+                      y = (110 * density).toInt()
+                      applyCutoutFlag(this)
+                  }
+
+                  // 3. Punch-Hole Camera Interactive Hitbox Layer (Tap camera hole to deploy or retract)
+                  punchHoleParams = WindowManager.LayoutParams(
+                      (64 * density).toInt(),
+                      (48 * density).toInt(),
+                      layoutType,
+                      WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                              WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                              WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                      PixelFormat.TRANSLUCENT
+                  ).apply {
+                      gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+                      x = (prefs.getInt("cam_x", 0) * density).roundToInt()
+                      y = (prefs.getInt("cam_y", 6) * density).roundToInt()
+                      applyCutoutFlag(this)
+                  }
+
+                  companionView = CompanionOverlayView(
+                      this,
+                      isSystemOverlay = true,
+                      onStateChanged = { out ->
+                          isCompanionOut = out
+                          updateSensorRegistration()
+                          characterTouchView?.post {
+                              characterTouchView?.visibility = if (out && isPortrait) View.VISIBLE else View.GONE
+                          }
+                      },
+                      onCharacterBoundsUpdated = { offsetXDp, topYDp, active ->
+                          characterTouchView?.let { v ->
+                              val targetVis = if (active && isPortrait) View.VISIBLE else View.GONE
+                              if (v.visibility != targetVis) v.visibility = targetVis
+                              if (active && isPortrait) {
+                                  val newX = (offsetXDp * density).roundToInt()
+                                  val newY = (topYDp * density).roundToInt().coerceAtLeast((48 * density).toInt())
+                                  if ( kotlin.math.abs(charTouchParams.x - newX) > 6 || kotlin.math.abs(charTouchParams.y - newY) > 6) {
+                                      charTouchParams.x = newX
+                                      charTouchParams.y = newY
+                                      try { windowManager.updateViewLayout(v, charTouchParams) } catch (_: Exception) {}
+                                  }
+                              }
+                          }
+                      }
+                  ).also { view ->
                       syncPreferencesToView(view)
-                      windowManager.addView(view, params)
+                      windowManager.addView(view, visualParams)
+                  }
+
+                  val charGesture = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+                      override fun onDown(e: MotionEvent): Boolean = true
+                      override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                          companionView?.onCharacterSingleTap()
+                          return true
+                      }
+                      override fun onDoubleTap(e: MotionEvent): Boolean {
+                          companionView?.retractCompanion()
+                          return true
+                      }
+                      override fun onScroll(e1: MotionEvent?, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
+                          companionView?.applyHorizontalImpulse(-distanceX)
+                          return true
+                      }
+                  })
+
+                  characterTouchView = View(this).apply {
+                      setBackgroundColor(Color.TRANSPARENT)
+                      setOnTouchListener { _, event -> charGesture.onTouchEvent(event) }
+                  }.also {
+                      windowManager.addView(it, charTouchParams)
+                  }
+
+                  val holeGesture = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+                      override fun onDown(e: MotionEvent): Boolean = true
+                      override fun onSingleTapUp(e: MotionEvent): Boolean {
+                          companionView?.toggleCompanion()
+                          return true
+                      }
+                  })
+
+                  punchHoleTouchView = View(this).apply {
+                      setBackgroundColor(Color.TRANSPARENT)
+                      setOnTouchListener { _, event -> holeGesture.onTouchEvent(event) }
+                  }.also {
+                      windowManager.addView(it, punchHoleParams)
                   }
 
                   updateSensorRegistration()
               }
 
+              private fun applyCutoutFlag(lp: WindowManager.LayoutParams) {
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                      lp.layoutInDisplayCutoutMode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                          WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+                      } else {
+                          WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+                      }
+                  }
+              }
+
               private fun syncPreferencesToView(view: CompanionOverlayView) {
+                  val density = resources.displayMetrics.density
                   view.charMode = prefs.getString("char_mode", "rotate") ?: "rotate"
                   if (view.charMode != "rotate") {
                       view.activeCharIdx = view.charMode.toIntOrNull() ?: 0
@@ -1229,11 +1441,19 @@ jobs:
                   view.visitIntervalSec = prefs.getInt("visit_sec", 120)
                   view.camTopOffsetDp = prefs.getInt("cam_y", 6).toFloat()
                   view.camLeftOffsetDp = prefs.getInt("cam_x", 0).toFloat()
-                  view.bubbleDisplaySec = prefs.getInt("read_sec", 8)
-                  view.targetRopeRatio = prefs.getInt("rope_pct", 36) / 100f
+                  view.bubbleDisplaySec = prefs.getInt("read_sec", 9)
+                  view.textSizeSp = prefs.getInt("text_sp", 16)
+                  view.targetRopeRatio = prefs.getInt("rope_pct", 28) / 100f
                   view.fallAnimationEnabled = prefs.getBoolean("fall_on", true)
+                  view.rebuildBubbleLayouts()
                   view.startLoop()
                   view.invalidate()
+
+                  punchHoleTouchView?.let { hv ->
+                      punchHoleParams.x = (view.camLeftOffsetDp * density).roundToInt()
+                      punchHoleParams.y = (view.camTopOffsetDp * density).roundToInt()
+                      try { windowManager.updateViewLayout(hv, punchHoleParams) } catch (_: Exception) {}
+                  }
               }
 
               override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
@@ -1262,6 +1482,8 @@ jobs:
                       visibility = if (isPortrait) View.VISIBLE else View.GONE
                       if (isPortrait) startLoop()
                   }
+                  punchHoleTouchView?.visibility = if (isPortrait) View.VISIBLE else View.GONE
+                  characterTouchView?.visibility = if (isPortrait && isCompanionOut) View.VISIBLE else View.GONE
                   updateSensorRegistration()
               }
 
@@ -1303,7 +1525,7 @@ jobs:
 
                   val notification = builder
                       .setContentTitle("Punch Hole Companion Active")
-                      .setContentText("Running natively at your front camera — Tap to adjust")
+                      .setContentText("Tap camera hole to summon/hide • Tap friend for wisdom")
                       .setSmallIcon(android.R.drawable.ic_menu_compass)
                       .setContentIntent(openPending)
                       .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop Overlay", stopPending)
@@ -1333,8 +1555,12 @@ jobs:
                       sensorManager?.unregisterListener(this)
                       sensorRegistered = false
                   }
-                  companionView?.let { windowManager.removeView(it) }
+                  companionView?.let { try { windowManager.removeView(it) } catch (_: Exception) {} }
+                  characterTouchView?.let { try { windowManager.removeView(it) } catch (_: Exception) {} }
+                  punchHoleTouchView?.let { try { windowManager.removeView(it) } catch (_: Exception) {} }
                   companionView = null
+                  characterTouchView = null
+                  punchHoleTouchView = null
                   super.onDestroy()
               }
 
@@ -1449,8 +1675,9 @@ jobs:
                       visitCountdown = visitIntervalSec
                       camTopOffsetDp = prefs.getInt("cam_y", 6).toFloat()
                       camLeftOffsetDp = prefs.getInt("cam_x", 0).toFloat()
-                      bubbleDisplaySec = prefs.getInt("read_sec", 8)
-                      targetRopeRatio = prefs.getInt("rope_pct", 36) / 100f
+                      bubbleDisplaySec = prefs.getInt("read_sec", 9)
+                      textSizeSp = prefs.getInt("text_sp", 16)
+                      targetRopeRatio = prefs.getInt("rope_pct", 28) / 100f
                       fallAnimationEnabled = prefs.getBoolean("fall_on", true)
                   }
                   root.addView(previewView, FrameLayout.LayoutParams(
@@ -1469,8 +1696,8 @@ jobs:
 
                   val dockScroll = ScrollView(this).apply {
                       isVerticalScrollBarEnabled = false
-                      background = roundedBg("#E00A0D1C", "#29FFFFFF", 22f)
-                      setPadding(dp(15), dp(13), dp(15), dp(13))
+                      background = roundedBg("#E60A0D1C", "#29FFFFFF", 22f)
+                      setPadding(dp(15), dp(12), dp(15), dp(12))
                   }
 
                   val dock = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
@@ -1481,7 +1708,7 @@ jobs:
                       gravity = Gravity.CENTER_VERTICAL
                   }
                   val titleTv = TextView(this).apply {
-                      text = "Punch Hole Companion (Kotlin)"
+                      text = "Punch Hole Companion v3.0"
                       setTextColor(Color.WHITE)
                       setTypeface(typeface, Typeface.BOLD)
                       setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.5f)
@@ -1519,7 +1746,7 @@ jobs:
                   topRow.addView(hideBtn, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(30)))
                   dock.addView(topRow)
 
-                  dock.addView(makeSectionLabel("Active Friend (Auto-Rotates)"))
+                  dock.addView(makeSectionLabel("Active Friend (Tap friend for quote • Double-tap to hide)"))
                   val charRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
                   val charOptions = listOf("rotate" to "🔄 All", "0" to "🥷 Ninja", "1" to "🐱 Cat", "2" to "🤖 Bot", "3" to "🦊 Fox")
                   val charButtons = mutableListOf<Pair<String, Button>>()
@@ -1573,6 +1800,17 @@ jobs:
                   }
                   dock.addView(freqRow)
 
+                  addSlider(dock, "Bubble Text Size (Readability)", 12, 22, previewView.textSizeSp, "sp") { v ->
+                      previewView.textSizeSp = v
+                      prefs.edit().putInt("text_sp", v).apply()
+                      previewView.rebuildBubbleLayouts()
+                      if (previewView.state == CompanionOverlayView.State.PERCHED) previewView.speakWisdom("random")
+                      previewView.invalidate()
+                  }
+                  addSlider(dock, "Bubble Reading Time", 4, 20, previewView.bubbleDisplaySec, "s") { v ->
+                      previewView.bubbleDisplaySec = v
+                      prefs.edit().putInt("read_sec", v).apply()
+                  }
                   addSlider(dock, "Camera Hole Y-Position", 0, 55, previewView.camTopOffsetDp.toInt(), "px") { v ->
                       previewView.camTopOffsetDp = v.toFloat()
                       prefs.edit().putInt("cam_y", v).apply()
@@ -1583,11 +1821,7 @@ jobs:
                       prefs.edit().putInt("cam_x", v).apply()
                       previewView.invalidate()
                   }
-                  addSlider(dock, "Bubble Reading Time", 4, 18, previewView.bubbleDisplaySec, "s") { v ->
-                      previewView.bubbleDisplaySec = v
-                      prefs.edit().putInt("read_sec", v).apply()
-                  }
-                  addSlider(dock, "Rope Drop Depth", 18, 74, (previewView.targetRopeRatio * 100).toInt(), "%") { v ->
+                  addSlider(dock, "Rope Drop Depth", 16, 48, (previewView.targetRopeRatio * 100).toInt(), "%") { v ->
                       previewView.targetRopeRatio = v / 100f
                       prefs.edit().putInt("rope_pct", v).apply()
                       previewView.invalidate()
@@ -1601,12 +1835,12 @@ jobs:
                   val teachBtn = makeActionButton("Teach 🧠", "#1AFFFFFF") {
                       val cat = listOf("trick", "bias", "maxim", "model").random()
                       if (previewView.state == CompanionOverlayView.State.INSIDE) previewView.deployCompanion(false)
-                      previewView.postDelayed({ previewView.speakWisdom(cat) }, 500L)
+                      previewView.postDelayed({ previewView.speakWisdom(cat) }, 400L)
                   }
                   val motivateBtn = makeActionButton("Motivate 🔥", "#1AFFFFFF") {
                       val cat = listOf("motivation", "time", "work").random()
                       if (previewView.state == CompanionOverlayView.State.INSIDE) previewView.deployCompanion(false)
-                      previewView.postDelayed({ previewView.speakWisdom(cat) }, 500L)
+                      previewView.postDelayed({ previewView.speakWisdom(cat) }, 400L)
                   }
                   val gyroBtn = makeActionButton("Gyro ON", "#1AFFFFFF") {
                       gyroActive = !gyroActive
@@ -1641,7 +1875,7 @@ jobs:
                       ViewGroup.LayoutParams.WRAP_CONTENT
                   ).apply {
                       gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
-                      bottomMargin = dp(16)
+                      bottomMargin = dp(14)
                   })
 
                   root.addView(restoreBtn, FrameLayout.LayoutParams(
@@ -1662,7 +1896,7 @@ jobs:
                       setTextColor(Color.argb(210, 255, 255, 255))
                       setTextSize(TypedValue.COMPLEX_UNIT_SP, 10.5f)
                       setTypeface(typeface, Typeface.BOLD)
-                      setPadding(0, dp(6), 0, dp(3))
+                      setPadding(0, dp(5), 0, dp(3))
                   }
               }
 
@@ -1684,7 +1918,7 @@ jobs:
               ) {
                   val header = LinearLayout(this).apply {
                       orientation = LinearLayout.HORIZONTAL
-                      setPadding(0, dp(4), 0, 0)
+                      setPadding(0, dp(3), 0, 0)
                   }
                   val labelTv = TextView(this).apply {
                       text = title
