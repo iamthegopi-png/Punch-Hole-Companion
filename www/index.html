@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Punch Hole Companion — Wisdom & Motivation Edition</title>
+  <title>Punch Hole Companion — Pro Edition</title>
   <style>
     * {
       box-sizing: border-box;
@@ -32,6 +32,13 @@
       display: none !important;
     }
 
+    body.landscape-paused #scene,
+    body.landscape-paused #speech-bubble,
+    body.landscape-paused #cutout-wrapper {
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+
     #scene {
       position: fixed;
       inset: 0;
@@ -39,6 +46,7 @@
       height: 100%;
       z-index: 2;
       touch-action: none;
+      transition: opacity 0.25s ease;
     }
 
     /* Interactive Punch Hole aligned to Physical Camera Cutout */
@@ -51,6 +59,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      transition: opacity 0.25s ease;
     }
     #punch-hole {
       width: 126px;
@@ -90,15 +99,15 @@
       box-shadow: inset 0 0 2px rgba(100, 180, 255, 0.4);
     }
 
-    /* Dialogue & Wisdom Speech Bubble */
+    /* Dialogue & Wisdom Speech Bubble with Reading Progress Bar */
     #speech-bubble {
       position: fixed;
       z-index: 8;
       width: max-content;
-      max-width: min(270px, 90vw);
+      max-width: min(278px, 92vw);
       background: rgba(255, 255, 255, 0.98);
       color: #0f1429;
-      padding: 11px 15px;
+      padding: 11px 15px 13px;
       border-radius: 16px;
       font-size: 12px;
       line-height: 1.45;
@@ -106,6 +115,7 @@
       box-shadow: 0 12px 32px rgba(10, 14, 35, 0.38);
       pointer-events: none;
       opacity: 0;
+      overflow: hidden;
       transform: translate(-50%, -100%) scale(0.82);
       transition:
         opacity 0.25s ease,
@@ -137,32 +147,31 @@
       border-radius: 4px;
       color: #475569;
     }
-    #speech-bubble::after {
-      content: "";
+    #bubble-progress {
       position: absolute;
-      bottom: -5px;
-      left: 50%;
-      transform: translateX(-50%) rotate(45deg);
-      width: 11px;
-      height: 11px;
-      background: rgba(255, 255, 255, 0.98);
+      bottom: 0;
+      left: 0;
+      height: 3px;
+      width: 100%;
+      background: #e01937;
+      transform-origin: left center;
     }
 
     /* Glassmorphic Settings Dock */
     #ui-dock {
       position: fixed;
-      bottom: 16px;
+      bottom: 14px;
       left: 50%;
       transform: translateX(-50%);
       width: min(94vw, 420px);
       max-height: 82vh;
       overflow-y: auto;
-      background: rgba(10, 13, 28, 0.86);
+      background: rgba(10, 13, 28, 0.88);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border: 1px solid rgba(255, 255, 255, 0.16);
       border-radius: 22px;
-      padding: 13px 15px;
+      padding: 12px 15px;
       z-index: 10;
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
       transition: transform 0.35s ease, opacity 0.25s ease;
@@ -198,7 +207,7 @@
       align-items: center;
       flex-wrap: wrap;
       gap: 6px;
-      margin-bottom: 9px;
+      margin-bottom: 8px;
       font-size: 12px;
       font-weight: 700;
     }
@@ -222,7 +231,7 @@
     .chip-row {
       display: flex;
       gap: 5px;
-      margin-bottom: 8px;
+      margin-bottom: 7px;
       overflow-x: auto;
       padding-bottom: 2px;
     }
@@ -247,14 +256,20 @@
       color: #ffffff;
     }
 
+    .dual-sliders {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
     .slider-group {
-      margin-bottom: 7px;
+      margin-bottom: 6px;
     }
     .slider-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 11px;
+      font-size: 10.5px;
       color: rgba(255, 255, 255, 0.82);
       margin-bottom: 3px;
       font-weight: 600;
@@ -272,8 +287,8 @@
     input[type="range"]::-webkit-slider-thumb {
       -webkit-appearance: none;
       appearance: none;
-      width: 15px;
-      height: 15px;
+      width: 14px;
+      height: 14px;
       border-radius: 50%;
       background: #ffffff;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
@@ -284,21 +299,21 @@
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 6px;
-      margin-top: 7px;
+      margin-top: 6px;
     }
     .overlay-bar {
       display: grid;
       grid-template-columns: 1.5fr 1fr;
       gap: 6px;
-      margin-top: 8px;
-      padding-top: 8px;
+      margin-top: 7px;
+      padding-top: 7px;
       border-top: 1px solid rgba(255, 255, 255, 0.14);
     }
     .act-btn {
       background: rgba(255, 255, 255, 0.1);
       border: 1px solid rgba(255, 255, 255, 0.13);
       color: #fff;
-      padding: 8px 4px;
+      padding: 7px 4px;
       border-radius: 10px;
       font-size: 11px;
       font-weight: 600;
@@ -333,6 +348,7 @@
       <span class="category-tag" id="bubble-cat">Motivation</span>
     </div>
     <span id="bubble-text">Let's conquer your goals today!</span>
+    <div id="bubble-progress"></div>
   </div>
 
   <canvas id="scene"></canvas>
@@ -341,7 +357,7 @@
   <!-- Settings & Control Dock -->
   <div id="ui-dock">
     <div class="dock-top">
-      <span>Punch Hole Companion</span>
+      <span>Punch Hole Companion Pro</span>
       <div style="display:flex; gap:5px;">
         <button class="pill-btn active-toggle" id="fall-toggle-btn">Fall: ON</button>
         <button class="pill-btn" id="shape-btn">Hole</button>
@@ -373,22 +389,28 @@
       <div class="chip" data-sec="300">5 Min</div>
     </div>
 
-    <!-- Reading Time Slider -->
-    <div class="slider-group">
-      <div class="slider-header"><span>Bubble Display Time</span><span id="read-time-label">7s</span></div>
-      <input type="range" id="read-time-slider" min="3" max="15" value="7" />
+    <!-- Camera Cutout X & Y Alignment Sliders -->
+    <div class="dual-sliders">
+      <div>
+        <div class="slider-header"><span>Camera Y-Pos</span><span id="cam-y-label">6px</span></div>
+        <input type="range" id="cam-y-slider" min="0" max="55" value="6" />
+      </div>
+      <div>
+        <div class="slider-header"><span>Camera X-Pos</span><span id="cam-x-label">0px</span></div>
+        <input type="range" id="cam-x-slider" min="-60" max="60" value="0" />
+      </div>
     </div>
 
-    <!-- Camera Cutout Vertical Alignment Slider -->
-    <div class="slider-group">
-      <div class="slider-header"><span>Camera Hole Y-Position</span><span id="cam-y-label">6px</span></div>
-      <input type="range" id="cam-y-slider" min="0" max="55" value="6" />
-    </div>
-
-    <!-- Rope Depth & Tilt Sliders -->
-    <div class="slider-group">
-      <div class="slider-header"><span>Rope Drop Depth</span><span id="rope-label">36%</span></div>
-      <input type="range" id="rope-slider" min="18" max="74" value="36" />
+    <!-- Reading Time & Rope Depth Sliders -->
+    <div class="dual-sliders">
+      <div>
+        <div class="slider-header"><span>Read Time</span><span id="read-time-label">8s</span></div>
+        <input type="range" id="read-time-slider" min="4" max="18" value="8" />
+      </div>
+      <div>
+        <div class="slider-header"><span>Rope Depth</span><span id="rope-label">36%</span></div>
+        <input type="range" id="rope-slider" min="18" max="74" value="36" />
+      </div>
     </div>
 
     <div class="slider-group">
@@ -412,7 +434,7 @@
   </div>
 
   <script>
-    const STORAGE_KEY = 'punch_hole_companion_state_v3';
+    const STORAGE_KEY = 'punch_hole_companion_state_v4';
     const params = new URLSearchParams(window.location.search);
     const isOverlayWindow = params.get('overlay') === '1';
 
@@ -425,10 +447,13 @@
     const bubbleSpeaker = document.getElementById('bubble-speaker');
     const bubbleCat = document.getElementById('bubble-cat');
     const bubbleText = document.getElementById('bubble-text');
+    const bubbleProgress = document.getElementById('bubble-progress');
     const readTimeSlider = document.getElementById('read-time-slider');
     const readTimeLabel = document.getElementById('read-time-label');
     const camYSlider = document.getElementById('cam-y-slider');
     const camYLabel = document.getElementById('cam-y-label');
+    const camXSlider = document.getElementById('cam-x-slider');
+    const camXLabel = document.getElementById('cam-x-label');
     const ropeSlider = document.getElementById('rope-slider');
     const ropeLabel = document.getElementById('rope-label');
     const tiltSlider = document.getElementById('tilt-slider');
@@ -450,17 +475,40 @@
     let height = window.innerHeight;
     let dpr = Math.min(window.devicePixelRatio || 1, 2.5);
     let camTopOffset = params.has('camy') ? Number(params.get('camy')) : 6;
-    let bubbleDisplaySec = params.has('read') ? Number(params.get('read')) : 7;
-    let anchorX = width / 2;
+    let camLeftOffset = params.has('camx') ? Number(params.get('camx')) : 0;
+    let bubbleDisplaySec = params.has('read') ? Number(params.get('read')) : 8;
+    let anchorX = width / 2 + camLeftOffset;
     let anchorY = camTopOffset + 17;
+    let isLandscapePaused = false;
 
-    function updateCameraPosition(px) {
-      camTopOffset = Number(px);
+    function updateCameraPosition(py, px) {
+      if (py !== undefined) camTopOffset = Number(py);
+      if (px !== undefined) camLeftOffset = Number(px);
       cutoutWrapper.style.top = `${camTopOffset}px`;
+      cutoutWrapper.style.left = `calc(50% + ${camLeftOffset}px)`;
+      anchorX = width / 2 + camLeftOffset;
       anchorY = camTopOffset + 17;
       camYSlider.value = camTopOffset;
       camYLabel.textContent = `${camTopOffset}px`;
+      camXSlider.value = camLeftOffset;
+      camXLabel.textContent = `${camLeftOffset > 0 ? '+' : ''}${camLeftOffset}px`;
     }
+
+    function checkOrientation() {
+      const landscape = window.innerWidth > window.innerHeight * 1.15;
+      window.setLandscapeMode(landscape);
+    }
+
+    window.setLandscapeMode = function(landscape) {
+      isLandscapePaused = Boolean(landscape);
+      document.body.classList.toggle('landscape-paused', isLandscapePaused);
+      if (isLandscapePaused && state !== 'INSIDE') {
+        speechBubble.classList.remove('visible');
+        state = 'INSIDE';
+        ropeExtend = 0;
+        notifyNativeCompanionOut(false);
+      }
+    };
 
     function resize() {
       width = window.innerWidth;
@@ -469,14 +517,15 @@
       canvas.width = width * dpr;
       canvas.height = height * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      anchorX = width / 2;
+      anchorX = width / 2 + camLeftOffset;
       anchorY = camTopOffset + 17;
+      checkOrientation();
     }
     window.addEventListener('resize', resize);
-    updateCameraPosition(camTopOffset);
+    updateCameraPosition(camTopOffset, camLeftOffset);
     resize();
 
-    // === MASSIVELY EXPANDED WISDOM, PSYCHOLOGY, BIAS & STOIC LIBRARY ===
+    // === 65+ ITEM NON-REPEATING WISDOM, PSYCHOLOGY, BIAS, STOIC & MENTAL MODEL LIBRARY ===
     const KNOWLEDGE_LIBRARY = {
       motivation: [
         "Focus on the next micro-step. Momentum builds action! ⚡",
@@ -485,56 +534,107 @@
         "Action cures anxiety. Dive into your task for just 5 minutes!",
         "Take a deep breath. You are far more capable than you realize.",
         "Small daily improvements over time lead to stunning results.",
-        "Energy flows where attention goes. Guard your focus fiercely."
+        "Energy flows where attention goes. Guard your focus fiercely.",
+        "Amateurs sit and wait for inspiration; pros get up and go to work.",
+        "Do the hardest task first thing. Everything else feels effortless after.",
+        "Consistency beats intensity. Show up today, even if it's small."
       ],
       timeCheck: [
         function() {
           const now = new Date();
           const h = now.getHours();
           const m = String(now.getMinutes()).padStart(2, '0');
-          if (h < 12) return `It's ${h}:${m} AM. Perfect morning focus time! Let's get things done! ☀️`;
-          if (h < 17) return `It's ${h}:${m} PM. Afternoon power hours! Keep your energy high! 🚀`;
-          return `It's ${h}:${m} PM. Great job today—wind down or finish strong! 🌙`;
+          const h12 = h % 12 || 12;
+          const ampm = h < 12 ? 'AM' : 'PM';
+          if (h < 12) return `It's ${h12}:${m} ${ampm}. Prime morning focus window—tackle your #1 priority! ☀️`;
+          if (h < 17) return `It's ${h12}:${m} ${ampm}. Afternoon power hours! Stay hydrated and sharp! 🚀`;
+          return `It's ${h12}:${m} ${ampm}. Wrap up your key goals and recharge your mind! 🌙`;
         }
       ],
       workCheck: [
         "Time for a deep work sprint! Put your phone face down and crush it for 25 minutes. 💻",
-        "Stand up, stretch your legs, and get back to your mission with fresh eyes! 🌟",
+        "Stand up, roll your shoulders back, take 3 deep breaths, and reset your posture! 🌟",
         "Break your big project into three tiny tasks. Which one starts right now?",
-        "Clear your desk and close unnecessary browser tabs. Cluttered environment = cluttered mind."
+        "Clear your workspace and close extra tabs. A clean space creates a sharp mind.",
+        "Single-tasking is a superpower. Do one thing right now with 100% presence.",
+        "Drink a glass of water! Even 2% dehydration drops cognitive focus by 15%.",
+        "Ask yourself: 'If I only accomplished one thing today, what would make me proud?'",
+        "20-20-20 Eye Reset: Look at something 20 feet away for 20 seconds right now."
       ],
       psychologyTricks: [
-        { title: "Benjamin Franklin Effect", text: "Want someone to like you? Ask them for a small favor. Psychologically, our brains justify helping them by deciding we like them." },
-        { title: "Foot-in-the-Door Technique", text: "To achieve a massive goal, agree to a tiny request first. Compliance snowballs naturally." },
-        { title: "The Zeigarnik Effect", text: "Your brain remembers unfinished tasks better than completed ones. Simply starting a task silences procrastination!" },
-        { title: "The 2-Minute Rule", text: "If a task takes less than 2 minutes to do, do it immediately. It eliminates mental clutter." },
-        { title: "Social Proof", text: "We look to others to determine correct behavior. Surround yourself with driven people to elevate your output." },
-        { title: "The Pygmalion Effect", text: "Higher expectations lead to an increase in performance. Expect excellence from yourself." },
-        { title: "Scarcity Principle", text: "We value things more when their availability is limited. Treat your time as your scarcest asset." },
-        { title: "The Reciprocity Norm", text: "When someone does something nice for us, we feel a deep psychological urge to return the favor." }
+        { title: "Benjamin Franklin Effect", text: "Want someone to like you? Ask them for a small favor. Our brains justify helping someone by deciding we like them." },
+        { title: "Foot-in-the-Door Technique", text: "To achieve a massive goal or agreement, start with a tiny request first. Momentum snowballs naturally." },
+        { title: "The Zeigarnik Effect", text: "Your brain remembers unfinished tasks far better than completed ones. Simply starting for 2 minutes silences procrastination!" },
+        { title: "The 2-Minute Rule", text: "If a task takes less than 2 minutes to do, do it immediately instead of scheduling it. It eliminates mental clutter." },
+        { title: "Social Proof", text: "We unconsciously mirror the habits of our peers. Surround yourself with focused, driven people to elevate your baseline." },
+        { title: "The Pygmalion Effect", text: "Higher expectations directly lead to higher performance—both in how you treat others and how you view yourself." },
+        { title: "Scarcity Principle", text: "People value things more when availability is limited. Treat your time and attention as your scarcest assets." },
+        { title: "The Reciprocity Norm", text: "Giving value, kindness, or recognition first creates a natural psychological desire for others to reciprocate." },
+        { title: "Tactical Silence", text: "In negotiations or deep conversations, pause for 4 seconds after someone speaks. They will often reveal the real truth." },
+        { title: "Labeling Emotion", text: "Saying 'It sounds like you feel frustrated' deactivates the brain's threat center and builds instant trust." },
+        { title: "Implementation Intentions", text: "Saying 'I will do X at time Y in place Z' triples your follow-through compared to vague goals." },
+        { title: "The Pratfall Effect", text: "Competent people become more likable when they admit a small flaw or mistake. Perfection creates distance; authenticity connects." }
       ],
       cognitiveBiases: [
-        { title: "Dunning-Kruger Effect", text: "Beginners often overestimate their knowledge, while experts underestimate theirs. Stay curious and humble!" },
-        { title: "Confirmation Bias", text: "We naturally seek information that supports our existing beliefs. Actively test your assumptions!" },
-        { title: "Loss Aversion", text: "Losing $100 hurts twice as much as gaining $100 feels good. Don't let fear of failure paralyze your risks." },
-        { title: "Anchoring Bias", text: "We rely too heavily on the first piece of information we encounter. Question your baseline assumptions." },
-        { title: "Sunk Cost Fallacy", text: "Continuing a task just because you invested time in it, even when quitting is smarter. Cut your losses!" },
-        { title: "Fundamental Attribution Error", text: "We judge others by their character, but ourselves by our circumstances. Practice radical empathy." },
-        { title: "Availability Heuristic", text: "We overestimate the likelihood of events that easily come to mind. Rely on data, not dramatic memories." },
-        { title: "Hindsight Bias", text: "Believing an event was predictable after it already happened. Don't punish past decisions with hindsight." }
+        { title: "Dunning-Kruger Effect", text: "Beginners often overestimate their skill, while experts underestimate theirs. Stay curious and keep learning!" },
+        { title: "Confirmation Bias", text: "Our brains filter for evidence that agrees with us. Actively ask: 'What would prove my current belief wrong?'" },
+        { title: "Loss Aversion", text: "Losing $100 hurts twice as much as gaining $100 feels good. Don't let fear of a small loss stop a smart risk." },
+        { title: "Anchoring Bias", text: "We rely too heavily on the first number or idea we hear. Always reset and evaluate value from scratch." },
+        { title: "Sunk Cost Fallacy", text: "Continuing a bad project just because you already spent time or money on it. Only future value matters!" },
+        { title: "Fundamental Attribution Error", text: "We judge others by their character, but excuse ourselves by our situation. Practice generous empathy." },
+        { title: "Availability Heuristic", text: "We judge probability by how easily examples pop into memory. Look at real statistics, not dramatic headlines." },
+        { title: "Spotlight Effect", text: "We think everyone notices our stumbles, but people are 99% focused on themselves. Move boldly!" },
+        { title: "Survivorship Bias", text: "Studying only winners hides the thousands who used the exact same strategy and failed. Study failure too." },
+        { title: "Planning Fallacy", text: "We always assume tasks will go according to the best-case scenario. Multiply your time estimates by 1.5x." },
+        { title: "Halo Effect", text: "Assuming someone who is good at one thing (or dressed well) is good at everything. Evaluate skills independently." },
+        { title: "Status Quo Bias", text: "Preferring things to stay the same even when change is better. Inaction is still a decision with a cost." }
       ],
       universalMaxims: [
         { title: "Marcus Aurelius (Stoicism)", text: "'The impediment to action advances action. What stands in the way becomes the way.'" },
         { title: "Seneca (Time)", text: "'It is not that we have a short time to live, but that we waste a lot of it.'" },
         { title: "Aristotle (Excellence)", text: "'We are what we repeatedly do. Excellence, then, is not an act, but a habit.'" },
         { title: "Carl Jung (Awareness)", text: "'Until you make the unconscious conscious, it will direct your life and you will call it fate.'" },
-        { title: "Epictetus (Control)", text: "'Some things are in our control and others not. Focus solely on what you can change.'" },
-        { title: "Lao Tzu (Action)", text: "'A journey of a thousand miles begins with a single step.'" },
-        { title: "Viktor Frankl (Purpose)", text: "'He who has a why to live can bear almost any how.'" },
-        { title: "Socrates (Wisdom)", text: "'An unexamined life is not worth living. Question your daily routines and motives.'" },
-        { title: "Naval Ravikant (Leverage)", text: "'Judgment is more important than energy. Figure out where to aim before you fire.'" }
+        { title: "Epictetus (Control)", text: "'Make the best use of what is in your power, and take the rest as it happens.'" },
+        { title: "Viktor Frankl (Freedom)", text: "'Between stimulus and response there is a space. In that space is our power to choose our response.'" },
+        { title: "Seneca (Courage)", text: "'We suffer more often in imagination than in reality.'" },
+        { title: "Marcus Aurelius (Focus)", text: "'You have power over your mind—not outside events. Realize this, and you will find strength.'" },
+        { title: "Lao Tzu (Mastery)", text: "'He who knows others is wise; he who knows himself is enlightened.'" },
+        { title: "Miyamoto Musashi (Focus)", text: "'Do nothing which is of no use. Step by step walk the thousand-mile road.'" },
+        { title: "Naval Ravikant (Clarity)", text: "'Play iterated games. All the returns in life—whether in wealth, relationships, or knowledge—come from compound interest.'" },
+        { title: "Epictetus (Progress)", text: "'First say to yourself what you would be; and then do what you have to do.'" }
+      ],
+      mentalModels: [
+        { title: "Pareto Principle (80/20 Rule)", text: "80% of your results come from 20% of your efforts. Identify and double down on your highest-leverage 20%." },
+        { title: "Parkinson's Law", text: "Work expands to fill the time available for its completion. Set shorter, tighter deadlines to finish faster." },
+        { title: "First Principles Thinking", text: "Break complex problems down to their fundamental truths and build up from there, rather than copying others." },
+        { title: "Inversion Mental Model", text: "Instead of asking how to succeed, ask 'What would guarantee failure?'—and systematically avoid those traps." },
+        { title: "Occam's Razor", text: "Among competing explanations, the simplest one with the fewest assumptions is usually the right one." },
+        { title: "Hanlon's Razor", text: "Never attribute to malice that which is adequately explained by carelessness or misunderstanding." },
+        { title: "Second-Order Thinking", text: "Don't just ask 'What happens next?' Ask 'And then what happens after that?' Look 3 steps ahead." },
+        { title: "Goodhart's Law", text: "When a measure becomes a target, it ceases to be a good measure. Focus on real value, not vanity metrics." },
+        { title: "Gall's Law", text: "Every complex system that works evolved from a simple system that worked. Build the simple version first!" },
+        { title: "Eisenhower Matrix", text: "What is important is seldom urgent, and what is urgent is seldom important. Protect time for important, non-urgent work." },
+        { title: "Regret Minimization", text: "Project yourself to age 80 and look back: choose the path that minimizes regret for not having tried." },
+        { title: "Law of Diminishing Returns", text: "Perfectionism wastes effort. Getting from 95% to 100% often takes longer than getting from 0% to 95%." }
       ]
     };
+
+    // Fisher-Yates Non-Repeating Shuffle Decks
+    const shuffleDecks = {};
+    function getNextFromDeck(key, list) {
+      if (!shuffleDecks[key] || shuffleDecks[key].length === 0) {
+        const indices = list.map((_, idx) => idx);
+        for (let i = indices.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          const temp = indices[i];
+          indices[i] = indices[j];
+          indices[j] = temp;
+        }
+        shuffleDecks[key] = indices;
+      }
+      const nextIdx = shuffleDecks[key].pop();
+      return list[nextIdx];
+    }
 
     const CHARACTERS = [
       { id: 'ninja', name: 'Shinobi', color: '#e01937' },
@@ -547,7 +647,7 @@
     let activeCharIdx = charMode !== 'rotate' ? Number(charMode) : 0;
     let visitIntervalSec = params.has('sec') ? Number(params.get('sec')) : 120;
     let visitCountdown = visitIntervalSec;
-    let hangOutTimer = 22;
+    let hangOutTimer = Math.max(22, bubbleDisplaySec + 4);
     let fallAnimationEnabled = params.has('fall') ? params.get('fall') === '1' : true;
     let gyroEnabled = false;
     let lastTickTime = Date.now();
@@ -573,6 +673,42 @@
     const RIBBON_LEN = 8;
     let ribbonNodes = Array.from({ length: RIBBON_LEN }, () => ({ x: 0, y: 0 }));
 
+    // Notify Native OverlayService to enable/disable hardware accelerometer (0% idle drain)
+    function notifyNativeCompanionOut(isOut) {
+      if (window.OverlayHost && typeof window.OverlayHost.setCompanionOut === 'function') {
+        window.OverlayHost.setCompanionOut(Boolean(isOut));
+      }
+    }
+
+    // Live Config Receiver (Updates overlay smoothly without WebView page reload)
+    window.applyLiveConfig = function(cfg) {
+      if (!cfg) return;
+      if (cfg.charMode !== undefined) {
+        charMode = cfg.charMode;
+        if (charMode !== 'rotate') activeCharIdx = Number(charMode);
+      }
+      if (cfg.visitIntervalSec !== undefined) {
+        visitIntervalSec = Number(cfg.visitIntervalSec);
+        visitCountdown = Math.min(visitCountdown, visitIntervalSec);
+        if (visitIntervalSec === 0 && state === 'INSIDE' && !isLandscapePaused) {
+          deployCompanion(false);
+        }
+      }
+      if (cfg.targetRopeRatio !== undefined) {
+        targetRopeRatio = Number(cfg.targetRopeRatio);
+      }
+      if (cfg.camTopOffset !== undefined || cfg.camLeftOffset !== undefined) {
+        updateCameraPosition(cfg.camTopOffset, cfg.camLeftOffset);
+      }
+      if (cfg.bubbleDisplaySec !== undefined) {
+        bubbleDisplaySec = Number(cfg.bubbleDisplaySec);
+      }
+      if (cfg.fallAnimationEnabled !== undefined) {
+        fallAnimationEnabled = Boolean(cfg.fallAnimationEnabled);
+      }
+      startRenderLoop();
+    };
+
     function saveState() {
       if (isOverlayWindow) return;
       try {
@@ -582,6 +718,7 @@
           visitIntervalSec,
           targetRopeRatio,
           camTopOffset,
+          camLeftOffset,
           bubbleDisplaySec,
           fallAnimationEnabled,
           circleMode: punchHole.classList.contains('circle-mode'),
@@ -589,7 +726,7 @@
           gyroEnabled
         };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-        syncNativeOverlayConfig();
+        syncNativeOverlayConfig(payload);
       } catch (_) {}
     }
 
@@ -605,8 +742,11 @@
           visitIntervalSec = Number(saved.visitIntervalSec);
           visitCountdown = visitIntervalSec;
         }
-        if (saved.camTopOffset !== undefined) {
-          updateCameraPosition(saved.camTopOffset);
+        if (saved.camTopOffset !== undefined || saved.camLeftOffset !== undefined) {
+          updateCameraPosition(
+            saved.camTopOffset !== undefined ? saved.camTopOffset : camTopOffset,
+            saved.camLeftOffset !== undefined ? saved.camLeftOffset : camLeftOffset
+          );
         }
         if (saved.bubbleDisplaySec !== undefined) {
           bubbleDisplaySec = Number(saved.bubbleDisplaySec);
@@ -658,12 +798,18 @@
 
     function buildOverlayQuery() {
       const ropePct = Math.round(targetRopeRatio * 100);
-      return `overlay=1&char=${encodeURIComponent(charMode)}&sec=${visitIntervalSec}&rope=${ropePct}&camy=${camTopOffset}&read=${bubbleDisplaySec}&fall=${fallAnimationEnabled ? 1 : 0}`;
+      return `overlay=1&char=${encodeURIComponent(charMode)}&sec=${visitIntervalSec}&rope=${ropePct}&camy=${camTopOffset}&camx=${camLeftOffset}&read=${bubbleDisplaySec}&fall=${fallAnimationEnabled ? 1 : 0}`;
     }
 
-    function syncNativeOverlayConfig() {
-      if (window.NativeApp && typeof window.NativeApp.updateOverlayQuery === 'function') {
-        window.NativeApp.updateOverlayQuery(buildOverlayQuery());
+    function syncNativeOverlayConfig(payloadObj) {
+      if (window.NativeApp) {
+        const q = buildOverlayQuery();
+        const jsonStr = JSON.stringify(payloadObj || {});
+        if (typeof window.NativeApp.updateOverlayLive === 'function') {
+          window.NativeApp.updateOverlayLive(q, jsonStr);
+        } else if (typeof window.NativeApp.updateOverlayQuery === 'function') {
+          window.NativeApp.updateOverlayQuery(q);
+        }
       }
     }
 
@@ -677,46 +823,57 @@
 
     let bubbleTimeout = null;
     function speakWisdom(category = 'random') {
-      if (state === 'INSIDE' || state === 'RETRACT_ROPE') return;
+      if (state === 'INSIDE' || state === 'RETRACT_ROPE' || isLandscapePaused) return;
       const char = CHARACTERS[activeCharIdx];
       let catName = "Motivation";
       let text = "";
 
       if (category === 'random') {
-        const types = ['motivation', 'time', 'work', 'trick', 'bias', 'maxim'];
+        const types = ['motivation', 'time', 'work', 'trick', 'bias', 'maxim', 'model'];
         category = types[Math.floor(Math.random() * types.length)];
       }
 
       if (category === 'motivation') {
         catName = "Motivation 🔥";
-        const arr = KNOWLEDGE_LIBRARY.motivation;
-        text = arr[Math.floor(Math.random() * arr.length)];
+        text = getNextFromDeck('motivation', KNOWLEDGE_LIBRARY.motivation);
       } else if (category === 'time') {
-        catName = "Clock ⏰";
+        catName = "Time Check ⏰";
         const fn = KNOWLEDGE_LIBRARY.timeCheck[0];
         text = fn();
       } else if (category === 'work') {
-        catName = "Work Hard 💼";
-        const arr = KNOWLEDGE_LIBRARY.workCheck;
-        text = arr[Math.floor(Math.random() * arr.length)];
+        catName = "Focus & Action 💼";
+        text = getNextFromDeck('work', KNOWLEDGE_LIBRARY.workCheck);
       } else if (category === 'trick') {
-        catName = "Psych Trick 🧠";
-        const item = KNOWLEDGE_LIBRARY.psychologyTricks[Math.floor(Math.random() * KNOWLEDGE_LIBRARY.psychologyTricks.length)];
+        catName = "Psych Principle 🧠";
+        const item = getNextFromDeck('trick', KNOWLEDGE_LIBRARY.psychologyTricks);
         text = `<b>${item.title}:</b> ${item.text}`;
       } else if (category === 'bias') {
         catName = "Cognitive Bias 📐";
-        const item = KNOWLEDGE_LIBRARY.cognitiveBiases[Math.floor(Math.random() * KNOWLEDGE_LIBRARY.cognitiveBiases.length)];
+        const item = getNextFromDeck('bias', KNOWLEDGE_LIBRARY.cognitiveBiases);
         text = `<b>${item.title}:</b> ${item.text}`;
       } else if (category === 'maxim') {
-        catName = "Universal Maxim 🏛️";
-        const item = KNOWLEDGE_LIBRARY.universalMaxims[Math.floor(Math.random() * KNOWLEDGE_LIBRARY.universalMaxims.length)];
+        catName = "Stoic Maxim 🏛️";
+        const item = getNextFromDeck('maxim', KNOWLEDGE_LIBRARY.universalMaxims);
+        text = `<b>${item.title}:</b> ${item.text}`;
+      } else if (category === 'model') {
+        catName = "Mental Model ⚙️";
+        const item = getNextFromDeck('model', KNOWLEDGE_LIBRARY.mentalModels);
         text = `<b>${item.title}:</b> ${item.text}`;
       }
 
       bubbleSpeaker.textContent = char.name;
       bubbleSpeaker.style.color = char.color;
+      bubbleProgress.style.background = char.color;
       bubbleCat.textContent = catName;
       bubbleText.innerHTML = text;
+
+      // Animate visual reading timer bar
+      bubbleProgress.style.transition = 'none';
+      bubbleProgress.style.transform = 'scaleX(1)';
+      void bubbleProgress.offsetWidth;
+      bubbleProgress.style.transition = `transform ${bubbleDisplaySec}s linear`;
+      bubbleProgress.style.transform = 'scaleX(0)';
+
       speechBubble.classList.add('visible');
 
       clearTimeout(bubbleTimeout);
@@ -747,15 +904,17 @@
     }
 
     function deployCompanion(advance = false) {
+      if (isLandscapePaused) return;
       if (advance) selectNextCharacter();
       state = 'DROP_ROPE';
       ropeExtend = 0.02;
       ropeExtendVel = 0.035;
       slidePos = 0.0;
       slideVel = 0.0;
-      hangOutTimer = Math.max(22, bubbleDisplaySec + 2);
+      hangOutTimer = Math.max(22, bubbleDisplaySec + 4);
       lastTickTime = Date.now();
       animateCutout(true);
+      notifyNativeCompanionOut(true);
       startRenderLoop();
     }
 
@@ -780,25 +939,25 @@
     document.getElementById('toggle-btn').addEventListener('click', toggleCompanion);
 
     document.getElementById('teach-btn').addEventListener('click', () => {
+      const categories = ['trick', 'bias', 'maxim', 'model'];
+      const chosen = categories[Math.floor(Math.random() * categories.length)];
       if (state === 'INSIDE') {
         deployCompanion(false);
-        setTimeout(() => speakWisdom('trick'), 1200);
+        setTimeout(() => speakWisdom(chosen), 1200);
       } else {
         landingSquashVel = 2.0;
-        const categories = ['trick', 'bias', 'maxim'];
-        const chosen = categories[Math.floor(Math.random() * categories.length)];
         speakWisdom(chosen);
       }
     });
 
     document.getElementById('motivate-btn').addEventListener('click', () => {
+      const categories = ['motivation', 'time', 'work'];
+      const chosen = categories[Math.floor(Math.random() * categories.length)];
       if (state === 'INSIDE') {
         deployCompanion(false);
-        setTimeout(() => speakWisdom('motivation'), 1200);
+        setTimeout(() => speakWisdom(chosen), 1200);
       } else {
         landingSquashVel = 2.0;
-        const categories = ['motivation', 'time', 'work'];
-        const chosen = categories[Math.floor(Math.random() * categories.length)];
         speakWisdom(chosen);
       }
     });
@@ -818,7 +977,7 @@
         charMode = val;
         if (val !== 'rotate') {
           activeCharIdx = Number(val);
-          if (state === 'PERCHED') speakWisdom('motivation');
+          if (state === 'PERCHED') speakWisdom('random');
           else if (state === 'INSIDE') deployCompanion(false);
         }
         saveState();
@@ -844,6 +1003,8 @@
       const now = Date.now();
       const elapsedSec = Math.max(1, Math.round((now - lastTickTime) / 1000));
       lastTickTime = now;
+
+      if (isLandscapePaused) return;
 
       if (visitIntervalSec <= 0) {
         timerBadge.textContent = 'LIVE';
@@ -889,12 +1050,17 @@
     readTimeSlider.addEventListener('input', (e) => {
       bubbleDisplaySec = Number(e.target.value);
       readTimeLabel.textContent = `${bubbleDisplaySec}s`;
-      hangOutTimer = Math.max(22, bubbleDisplaySec + 2);
+      hangOutTimer = Math.max(22, bubbleDisplaySec + 4);
       saveState();
     });
 
     camYSlider.addEventListener('input', (e) => {
-      updateCameraPosition(e.target.value);
+      updateCameraPosition(e.target.value, camLeftOffset);
+      saveState();
+    });
+
+    camXSlider.addEventListener('input', (e) => {
+      updateCameraPosition(camTopOffset, e.target.value);
       saveState();
     });
 
@@ -994,6 +1160,7 @@
     });
 
     loadState();
+    notifyNativeCompanionOut(true);
     setTimeout(refreshOverlayBtnState, 400);
 
     function updatePhysics() {
@@ -1020,7 +1187,7 @@
           landingSquashVel = 3.5;
           ropeStretchVel = 4.0;
           ropeAngVel += 0.013;
-          setTimeout(() => { if (state === 'PERCHED') speakWisdom('motivation'); }, 400);
+          setTimeout(() => { if (state === 'PERCHED') speakWisdom('random'); }, 400);
         }
       } else if (state === 'CLIMB_UP') {
         slidePos -= 0.028;
@@ -1036,6 +1203,7 @@
         if (ropeExtend <= 0.0) {
           ropeExtend = 0.0;
           state = 'INSIDE';
+          notifyNativeCompanionOut(false);
         }
       }
 
@@ -1311,7 +1479,7 @@
 
     function render() {
       ctx.clearRect(0, 0, width, height);
-      if (state === 'INSIDE') return;
+      if (state === 'INSIDE' || isLandscapePaused) return;
 
       const maxRopeLen = height * targetRopeRatio;
       const currentRopeLen = maxRopeLen * ropeExtend + ropeStretch;
@@ -1330,10 +1498,10 @@
         const charY = invT * invT * anchorY + 2 * invT * t * midY + t * t * knotY;
 
         if (speechBubble.classList.contains('visible')) {
-          const halfBubble = Math.min(135, width * 0.45);
+          const halfBubble = Math.min(139, width * 0.46);
           const clampedX = Math.max(halfBubble + 6, Math.min(width - halfBubble - 6, charX));
           speechBubble.style.left = `${clampedX}px`;
-          speechBubble.style.top = `${Math.max(70, charY - 82)}px`;
+          speechBubble.style.top = `${Math.max(72, charY - 82)}px`;
         }
 
         const breathe = Math.sin(time * 2.5) * 1.2;
@@ -1419,7 +1587,7 @@
     function loop() {
       updatePhysics();
       render();
-      if (state === 'INSIDE') {
+      if (state === 'INSIDE' || isLandscapePaused) {
         ctx.clearRect(0, 0, width, height);
         animFrameId = null;
         return;
