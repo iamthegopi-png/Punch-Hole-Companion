@@ -73,8 +73,8 @@ jobs:
                   applicationId = "com.companion.punchhole"
                   minSdk = 26
                   targetSdk = 34
-                  versionCode = 4
-                  versionName = "4.0-kotlin"
+                  versionCode = 5
+                  versionName = "5.0-kotlin"
               }
               compileOptions {
                   sourceCompatibility = JavaVersion.VERSION_17
@@ -273,16 +273,19 @@ jobs:
               var onCharacterBoundsUpdated: ((Float, Float, Boolean) -> Unit)? = null
           ) : View(context), Choreographer.FrameCallback {
 
-              enum class State { INSIDE, DROP_ROPE, SLIDE_DOWN, PERCHED, CLIMB_UP, RETRACT_ROPE }
+              enum class State { INSIDE, PEEKABOO, DROP_ROPE, SLIDE_DOWN, PERCHED, CLIMB_UP, RETRACT_ROPE }
               enum class CharType(val displayName: String, val accentColor: Int) {
                   NINJA("SHINOBI", Color.parseColor("#FF2E54")),
                   CAT("KURO NEKO", Color.parseColor("#FBBF24")),
                   BOT("BIBI BOT", Color.parseColor("#22D3EE")),
                   FOX("KITSUNE", Color.parseColor("#FB923C"))
               }
-              enum class IdleTrick { NONE, WAVE, BACKFLIP, LOOK_AROUND, SLEEP_ZZZ }
+              enum class IdleTrick {
+                  NONE, SCREEN_KNOCK, UPSIDE_DOWN, ONE_HAND_HANG, BACKFLIP, TRAPEZE_SWING, WAVE, SLEEP_ZZZ
+              }
 
-              private data class Particle(var x: Float, var y: Float, var vx: Float, var vy: Float, var size: Float, var alpha: Float, var color: Int)
+              private data class Particle(var x: Float, var y: Float, var vx: Float, var vy: Float, var size: Float, var alpha: Float, var color: Int, var isStar: Boolean, var rot: Float)
+              private data class KnockRipple(var x: Float, var y: Float, var radius: Float, var alpha: Float, var color: Int)
 
               private val density = resources.displayMetrics.density
               private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -298,7 +301,7 @@ jobs:
               var activeCharIdx: Int = 0
               var visitIntervalSec: Int = 120
               var visitCountdown: Int = 120
-              var hangOutTimer: Int = 26
+              var hangOutTimer: Int = 28
               var camTopOffsetDp: Float = 6f
               var camLeftOffsetDp: Float = 0f
               var targetRopeRatio: Float = 0.28f
@@ -308,8 +311,9 @@ jobs:
               var quotesEnabled: Boolean = true
               var isLandscapePaused: Boolean = false
 
-              var state: State = State.DROP_ROPE
+              var state: State = State.PEEKABOO
                   private set
+              private var peekProgress = 0f
               private var ropeExtend = 0.02f; private var ropeExtendVel = 0.035f
               private var slidePos = 0f; private var slideVel = 0f
               private var ropeAngle = 0f; private var ropeAngVel = 0f
@@ -321,17 +325,23 @@ jobs:
               private var legSwingAngle = 0f; private var legSwingVel = 0f
               private var landingSquash = 0f; private var landingSquashVel = 0f
 
-              // Natural Animations & Showstopper Tricks
+              // Showstopper Natural Animations State
               private var simTime = 0f
               private var portalPulse = 1f
               private var currentTrick = IdleTrick.NONE
+              private var trickCycleIdx = 0
               private var trickPhase = 0f
-              private var nextTrickCountdown = 180
+              private var nextTrickCountdown = 120
               private var flipAngleDeg = 0f
+              private var upsideDownBlend = 0f
+              private var oneHandBlend = 0f
+              private var knockScale = 1f
+              private var knockStage = 0
               private var blinkTimer = 90; private var blinkAmount = 0f
               private var gazeX = 0f; private var targetGazeX = 0f; private var gazeTimer = 110
               private val ribbonNodes = Array(8) { PointF(0f, 0f) }
-              private val particles = ArrayList<Particle>(28)
+              private val particles = ArrayList<Particle>(32)
+              private val ripples = ArrayList<KnockRipple>(8)
 
               private var currentWisdom: WisdomItem? = null
               private var bubbleStartMs = 0L; private var bubbleDurationMs = 9000L
@@ -346,7 +356,7 @@ jobs:
                       val tapX = e.x / density; val tapY = e.y / density
                       val anchorX = (width / density) / 2f + camLeftOffsetDp; val anchorY = camTopOffsetDp + 17f
                       if (hypot(tapX - anchorX, tapY - anchorY) < 48f) { toggleCompanion(); return true }
-                      if (state != State.INSIDE && hypot(tapX - lastCharXDp, tapY - (lastCharYDp - 28f)) < 75f) { onCharacterSingleTap(); return true }
+                      if (state != State.INSIDE && hypot(tapX - lastCharXDp, tapY - (lastCharYDp - 28f)) < 80f) { onCharacterSingleTap(); return true }
                       return false
                   }
                   override fun onDoubleTap(e: MotionEvent): Boolean {
@@ -411,49 +421,72 @@ jobs:
               fun spawnParticleBurst(cx: Float, cy: Float, count: Int = 14) {
                   val char = CharType.values()[activeCharIdx.coerceIn(0, 3)]
                   repeat(count) {
-                      if (particles.size < 32) {
+                      if (particles.size < 34) {
                           val ang = Random.nextFloat() * PI.toFloat() * 2f
-                          val spd = 0.8f + Random.nextFloat() * 2.6f
-                          particles.add(Particle(cx, cy, cos(ang) * spd, sin(ang) * spd - 0.9f, 2.2f + Random.nextFloat() * 2.5f, 1f, char.accentColor))
+                          val spd = 0.9f + Random.nextFloat() * 2.8f
+                          particles.add(Particle(cx, cy, cos(ang) * spd, sin(ang) * spd - 0.8f, 3.2f + Random.nextFloat() * 2.8f, 1f, char.accentColor, Random.nextBoolean(), Random.nextFloat() * 360f))
                       }
                   }
               }
 
-              fun triggerShowstopperTrick(forceFlip: Boolean = false) {
-                  currentTrick = if (forceFlip) IdleTrick.BACKFLIP else listOf(IdleTrick.WAVE, IdleTrick.BACKFLIP, IdleTrick.LOOK_AROUND, IdleTrick.SLEEP_ZZZ).random()
-                  trickPhase = 0f
-                  if (currentTrick == IdleTrick.BACKFLIP) {
-                      ropeStretchVel = -4.2f
-                      landingSquashVel = 3.5f
-                      spawnParticleBurst(lastCharXDp, lastCharYDp - 30f, 16)
-                  } else if (currentTrick == IdleTrick.WAVE) {
-                      spawnParticleBurst(lastCharXDp, lastCharYDp - 45f, 8)
+              fun triggerShowstopperTrick(cycleNext: Boolean = false) {
+                  val allTricks = listOf(
+                      IdleTrick.SCREEN_KNOCK,
+                      IdleTrick.UPSIDE_DOWN,
+                      IdleTrick.ONE_HAND_HANG,
+                      IdleTrick.BACKFLIP,
+                      IdleTrick.TRAPEZE_SWING,
+                      IdleTrick.WAVE,
+                      IdleTrick.SLEEP_ZZZ
+                  )
+                  currentTrick = if (cycleNext) {
+                      val t = allTricks[trickCycleIdx % allTricks.size]
+                      trickCycleIdx++
+                      t
+                  } else {
+                      allTricks.random()
                   }
+                  trickPhase = 0f
+                  knockStage = 0
+                  when (currentTrick) {
+                      IdleTrick.BACKFLIP -> {
+                          ropeStretchVel = -4.5f
+                          landingSquashVel = 3.8f
+                          spawnParticleBurst(lastCharXDp, lastCharYDp - 30f, 18)
+                      }
+                      IdleTrick.TRAPEZE_SWING -> {
+                          ropeAngVel = if (ropeAngle >= 0f) 0.042f else -0.042f
+                          spawnParticleBurst(lastCharXDp, lastCharYDp - 25f, 10)
+                      }
+                      IdleTrick.WAVE -> spawnParticleBurst(lastCharXDp, lastCharYDp - 45f, 10)
+                      else -> {}
+                  }
+                  startLoop()
               }
 
               fun onCharacterSingleTap() {
                   if (state == State.INSIDE || state == State.RETRACT_ROPE) {
                       deployCompanion(true)
                   } else {
-                      hangOutTimer = max(hangOutTimer, bubbleDisplaySec + 8)
-                      triggerShowstopperTrick(forceFlip = !quotesEnabled || Random.nextBoolean())
-                      ropeAngVel += if (Random.nextBoolean()) 0.022f else -0.022f
+                      hangOutTimer = max(hangOutTimer, bubbleDisplaySec + 10)
+                      triggerShowstopperTrick(cycleNext = true)
                       if (quotesEnabled) speakWisdom("random") else currentWisdom = null
                   }
               }
 
               fun applyHorizontalImpulse(deltaPx: Float) {
-                  ropeAngVel = (ropeAngVel + (deltaPx / density) * 0.0012f).coerceIn(-0.08f, 0.08f)
+                  ropeAngVel = (ropeAngVel + (deltaPx / density) * 0.0014f).coerceIn(-0.09f, 0.09f)
                   startLoop()
               }
 
               fun deployCompanion(advance: Boolean = false) {
                   if (isLandscapePaused) return
                   if (advance) activeCharIdx = if (charMode == "rotate") (activeCharIdx + 1) % 4 else (charMode.toIntOrNull() ?: 0)
-                  state = State.DROP_ROPE
+                  state = State.PEEKABOO
+                  peekProgress = 0f
                   ropeExtend = 0.02f; ropeExtendVel = 0.035f; slidePos = 0f; slideVel = 0f
                   portalPulse = 1.0f
-                  hangOutTimer = max(26, bubbleDisplaySec + 6)
+                  hangOutTimer = max(28, bubbleDisplaySec + 8)
                   lastSecondTickMs = SystemClock.elapsedRealtime()
                   onStateChanged?.invoke(true)
                   startLoop()
@@ -463,6 +496,9 @@ jobs:
                   currentWisdom = null
                   currentTrick = IdleTrick.NONE
                   flipAngleDeg = 0f
+                  upsideDownBlend = 0f
+                  oneHandBlend = 0f
+                  knockScale = 1f
                   portalPulse = 1.0f
                   state = State.CLIMB_UP
                   slideVel = 0f
@@ -503,20 +539,28 @@ jobs:
 
               private fun updatePhysics() {
                   simTime += 0.016f
-                  portalPulse = max(0f, portalPulse - 0.022f)
+                  portalPulse = max(0f, portalPulse - 0.02f)
 
                   when (state) {
+                      State.PEEKABOO -> {
+                          peekProgress += 0.022f
+                          gazeX = sin(peekProgress * 7f) * 2.8f
+                          if (peekProgress >= 1.0f) {
+                              state = State.DROP_ROPE
+                              portalPulse = 1.0f
+                          }
+                      }
                       State.DROP_ROPE -> {
-                          ropeExtendVel += 0.0045f; ropeExtend += ropeExtendVel
+                          ropeExtendVel += 0.0048f; ropeExtend += ropeExtendVel
                           if (ropeExtend >= 1f) { ropeExtend = 1f; ropeExtendVel = 0f; ropeStretchVel = 2.6f; state = State.SLIDE_DOWN; slidePos = 0.04f; slideVel = 0.024f }
                       }
                       State.SLIDE_DOWN -> {
                           slideVel = min(0.052f, slideVel + 0.003f)
                           slidePos += min(slideVel, (1f - slidePos) * 0.22f + 0.008f)
                           if (slidePos >= 0.995f) {
-                              slidePos = 1f; state = State.PERCHED; landingSquashVel = 3.8f; ropeStretchVel = 4.2f; ropeAngVel += 0.015f
-                              spawnParticleBurst(lastCharXDp, lastCharYDp - 20f, 12)
-                              triggerShowstopperTrick(forceFlip = false)
+                              slidePos = 1f; state = State.PERCHED; landingSquashVel = 3.8f; ropeStretchVel = 4.2f; ropeAngVel += 0.016f
+                              spawnParticleBurst(lastCharXDp, lastCharYDp - 20f, 14)
+                              triggerShowstopperTrick(cycleNext = false)
                               if (quotesEnabled) postDelayed({ if (state == State.PERCHED && quotesEnabled) speakWisdom("random") }, 350L)
                           }
                       }
@@ -532,38 +576,74 @@ jobs:
                   }
                   if (state == State.INSIDE) return
 
-                  // Ambient floating particles & Trick state machine
+                  // Showstopper Trick Progression
+                  val targetUpside = if (state == State.PERCHED && currentTrick == IdleTrick.UPSIDE_DOWN) 1f else 0f
+                  upsideDownBlend += (targetUpside - upsideDownBlend) * 0.1f
+
+                  val targetOneHand = if (state == State.PERCHED && currentTrick == IdleTrick.ONE_HAND_HANG) 1f else 0f
+                  oneHandBlend += (targetOneHand - oneHandBlend) * 0.1f
+
                   if (state == State.PERCHED) {
-                      if (Random.nextInt(14) == 0 && particles.size < 20) {
+                      if (Random.nextInt(12) == 0 && particles.size < 22) {
                           val char = CharType.values()[activeCharIdx.coerceIn(0, 3)]
-                          particles.add(Particle(lastCharXDp + (Random.nextFloat() - 0.5f) * 38f, lastCharYDp - Random.nextFloat() * 55f, (Random.nextFloat() - 0.5f) * 0.4f, -0.4f - Random.nextFloat() * 0.5f, 1.8f + Random.nextFloat() * 2f, 0.9f, char.accentColor))
+                          particles.add(Particle(lastCharXDp + (Random.nextFloat() - 0.5f) * 42f, lastCharYDp - Random.nextFloat() * 58f, (Random.nextFloat() - 0.5f) * 0.45f, -0.45f - Random.nextFloat() * 0.55f, 2.4f + Random.nextFloat() * 2.2f, 0.95f, char.accentColor, true, Random.nextFloat() * 360f))
                       }
+
                       if (currentTrick != IdleTrick.NONE) {
-                          trickPhase += 0.025f
-                          if (currentTrick == IdleTrick.BACKFLIP) {
-                              flipAngleDeg = (trickPhase * 360f * 1.4f).coerceAtMost(360f)
-                              if (flipAngleDeg >= 360f) { flipAngleDeg = 0f; currentTrick = IdleTrick.NONE }
-                          } else if (trickPhase >= 2.6f) {
-                              currentTrick = IdleTrick.NONE
+                          trickPhase += 0.022f
+                          when (currentTrick) {
+                              IdleTrick.BACKFLIP -> {
+                                  flipAngleDeg = (trickPhase * 360f * 1.55f).coerceAtMost(360f)
+                                  if (flipAngleDeg >= 360f) { flipAngleDeg = 0f; currentTrick = IdleTrick.NONE }
+                              }
+                              IdleTrick.SCREEN_KNOCK -> {
+                                  val zoom = sin((trickPhase / 2.2f).coerceIn(0f, 1f) * PI.toFloat())
+                                  knockScale = 1f + zoom * 0.36f
+                                  val char = CharType.values()[activeCharIdx.coerceIn(0, 3)]
+                                  if (trickPhase > 0.65f && knockStage == 0) {
+                                      knockStage = 1
+                                      ripples.add(KnockRipple(lastCharXDp - 12f, lastCharYDp - 35f, 4f, 1f, char.accentColor))
+                                  } else if (trickPhase > 1.15f && knockStage == 1) {
+                                      knockStage = 2
+                                      ripples.add(KnockRipple(lastCharXDp - 12f, lastCharYDp - 35f, 4f, 1f, Color.WHITE))
+                                  }
+                                  if (trickPhase >= 2.2f) { knockScale = 1f; currentTrick = IdleTrick.NONE }
+                              }
+                              IdleTrick.TRAPEZE_SWING -> {
+                                  ropeAngVel += cos(trickPhase * 5.5f) * 0.0022f
+                                  if (trickPhase >= 3.2f) currentTrick = IdleTrick.NONE
+                              }
+                              else -> {
+                                  if (trickPhase >= 3.2f) currentTrick = IdleTrick.NONE
+                              }
                           }
                       } else if (--nextTrickCountdown <= 0) {
-                          nextTrickCountdown = 150 + Random.nextInt(140)
-                          triggerShowstopperTrick(forceFlip = false)
+                          nextTrickCountdown = 110 + Random.nextInt(110)
+                          triggerShowstopperTrick(cycleNext = false)
                       }
+                  } else {
+                      knockScale = 1f
                   }
 
-                  val it = particles.iterator()
-                  while (it.hasNext()) {
-                      val pt = it.next()
-                      pt.x += pt.vx; pt.y += pt.vy; pt.alpha -= 0.022f
-                      if (pt.alpha <= 0f) it.remove()
+                  val pit = particles.iterator()
+                  while (pit.hasNext()) {
+                      val pt = pit.next()
+                      pt.x += pt.vx; pt.y += pt.vy; pt.rot += 4f; pt.alpha -= 0.02f
+                      if (pt.alpha <= 0f) pit.remove()
+                  }
+
+                  val rit = ripples.iterator()
+                  while (rit.hasNext()) {
+                      val rp = rit.next()
+                      rp.radius += 2.2f; rp.alpha -= 0.032f
+                      if (rp.alpha <= 0f) rit.remove()
                   }
 
                   val targetTiltRad = (phoneTiltDeg * PI.toFloat()) / 180f
                   smoothTiltRad += (targetTiltRad - smoothTiltRad) * 0.08f
-                  val breeze = sin(simTime * 1.5f) * 0.00022f
-                  ropeAngVel = (ropeAngVel + (-0.026f * (ropeAngle - smoothTiltRad * 0.36f) + breeze)) * 0.935f
-                  ropeAngle = (ropeAngle + ropeAngVel).coerceIn(-0.34f, 0.34f)
+                  val breeze = sin(simTime * 1.6f) * 0.00025f
+                  ropeAngVel = (ropeAngVel + (-0.026f * (ropeAngle - smoothTiltRad * 0.36f) + breeze)) * 0.94f
+                  ropeAngle = (ropeAngle + ropeAngVel).coerceIn(-0.42f, 0.42f)
                   midRopeBow += (-ropeAngVel * 135f - midRopeBow) * 0.18f
 
                   tasselAngVel = (tasselAngVel - 0.04f * (tasselAngle - smoothTiltRad * 0.5f) - ropeAngVel * 0.35f) * 0.90f
@@ -577,20 +657,20 @@ jobs:
                   wasSlipping = shouldSlip
                   slipBlend += ((if (shouldSlip) 1f else 0f) - slipBlend) * 0.085f
 
-                  val gravityLegTarget = smoothTiltRad * 0.55f + sin(simTime * 3.8f) * 0.16f
+                  val gravityLegTarget = smoothTiltRad * 0.55f + sin(simTime * 4.2f) * (if (currentTrick == IdleTrick.TRAPEZE_SWING) 0.45f else 0.18f)
                   legSwingVel = (legSwingVel + (-0.045f * (legSwingAngle - gravityLegTarget) - ropeAngVel * 1.4f)) * 0.91f
                   legSwingAngle += legSwingVel
 
                   if (--blinkTimer <= 0) {
                       blinkAmount = min(1f, blinkAmount + 0.35f)
-                      if (blinkTimer < -5) blinkTimer = 100 + Random.nextInt(130)
+                      if (blinkTimer < -5) blinkTimer = 95 + Random.nextInt(120)
                   } else blinkAmount = max(0f, blinkAmount - 0.35f)
 
-                  if (--gazeTimer <= 0) {
+                  if (--gazeTimer <= 0 && state != State.PEEKABOO) {
                       targetGazeX = (Random.nextFloat() - 0.5f) * 3.4f
-                      gazeTimer = 70 + Random.nextInt(110)
+                      gazeTimer = 65 + Random.nextInt(100)
                   }
-                  gazeX += (targetGazeX - gazeX) * 0.14f
+                  if (state != State.PEEKABOO) gazeX += (targetGazeX - gazeX) * 0.14f
               }
 
               override fun onDraw(canvas: Canvas) {
@@ -610,17 +690,26 @@ jobs:
                       canvas.drawRoundRect(rectF, 999f, 999f, paint)
                   }
 
-                  // Glowing Camera Portal Ring when deploying/retracting
-                  if (portalPulse > 0.02f) {
+                  // Breathing Neon Camera Halo + Portal Ring
+                  val haloAlpha = if (state != State.INSIDE) (70 + (sin(simTime * 3.5f) * 45).toInt()) else 0
+                  if (haloAlpha > 0 || portalPulse > 0.02f) {
                       paint.style = Paint.Style.STROKE
-                      paint.strokeWidth = 2.8f * portalPulse
                       paint.color = char.accentColor
-                      paint.alpha = (portalPulse * 230).toInt().coerceIn(0, 255)
-                      canvas.drawCircle(anchorX, anchorY, 17f + (1f - portalPulse) * 12f, paint)
+                      paint.strokeWidth = 2.2f + portalPulse * 2f
+                      paint.alpha = max(haloAlpha, (portalPulse * 235).toInt()).coerceIn(0, 255)
+                      canvas.drawCircle(anchorX, anchorY, 17.5f + (1f - portalPulse) * 9f, paint)
                       paint.alpha = 255
                   }
 
                   if (state == State.INSIDE) { canvas.restore(); return }
+
+                  // PEEK-A-BOO Entrance right under the camera hole!
+                  if (state == State.PEEKABOO) {
+                      val peekDrop = sin(peekProgress.coerceIn(0f, 1f) * PI.toFloat()) * 18f
+                      drawCharacterHead(canvas, char, anchorX, anchorY + 8f + peekDrop, sin(peekProgress * 6f) * 0.15f, false, false)
+                      canvas.restore()
+                      return
+                  }
 
                   val maxRopeLen = min(heightDp * targetRopeRatio, 230f)
                   val currentRopeLen = maxRopeLen * ropeExtend + ropeStretch
@@ -634,24 +723,35 @@ jobs:
                   if (state == State.SLIDE_DOWN || state == State.PERCHED || state == State.CLIMB_UP) {
                       val t = slidePos; val invT = 1f - t
                       val charX = invT * invT * anchorX + 2f * invT * t * midX + t * t * knotX
-                      val charY = invT * invT * anchorY + 2f * invT * t * midY + t * t * knotY
+                      val charY = invT * invT * anchorY + 2f * invT * t * midY + t * t * knotY + oneHandBlend * 24f
 
                       lastCharXDp = charX; lastCharYDp = charY
                       onCharacterBoundsUpdated?.invoke(charX - widthDp / 2f, charY - 32f, state == State.PERCHED)
 
-                      // Draw Floating Theme Particles
+                      // Draw Shaped Star & Aura Particles
                       paint.style = Paint.Style.FILL
                       for (pt in particles) {
                           paint.color = pt.color
-                          paint.alpha = (pt.alpha * 240).toInt().coerceIn(0, 255)
-                          canvas.drawCircle(pt.x, pt.y, pt.size, paint)
+                          paint.alpha = (pt.alpha * 245).toInt().coerceIn(0, 255)
+                          if (pt.isStar) drawFourPointStar(canvas, pt.x, pt.y, pt.size, pt.rot)
+                          else canvas.drawCircle(pt.x, pt.y, pt.size * 0.75f, paint)
                       }
                       paint.alpha = 255
 
                       drawCharacterPose(canvas, char, charX, charY, currentRopeLen)
 
-                      // Floating Zzz sleep bubbles during SLEEP_ZZZ trick
-                      if (currentTrick == IdleTrick.SLEEP_ZZZ && state == State.PERCHED) {
+                      // Draw Screen-Knock Glass Shockwave Ripples
+                      paint.style = Paint.Style.STROKE
+                      for (rp in ripples) {
+                          paint.color = rp.color
+                          paint.strokeWidth = 2.6f * rp.alpha
+                          paint.alpha = (rp.alpha * 240).toInt().coerceIn(0, 255)
+                          canvas.drawCircle(rp.x, rp.y, rp.radius, paint)
+                      }
+                      paint.alpha = 255
+
+                      // Floating Emotes (Zzz / Musical Note / Sparkle)
+                      if (state == State.PERCHED && currentTrick == IdleTrick.SLEEP_ZZZ) {
                           headerPaint.color = char.accentColor
                           val zOff = (trickPhase * 12f) % 18f
                           canvas.drawText("Z", charX + 14f + zOff * 0.4f, charY - 68f - zOff, headerPaint)
@@ -659,11 +759,21 @@ jobs:
                       }
 
                       canvas.restore()
-                      if (quotesEnabled) drawSpeechBubbleBelowCharacter(canvas, char, charX * density, (knotY + 30f) * density)
+                      if (quotesEnabled) drawSpeechBubbleBelowCharacter(canvas, char, charX * density, (knotY + 34f) * density)
                   } else {
                       onCharacterBoundsUpdated?.invoke(0f, 0f, false)
                       canvas.restore()
                   }
+              }
+
+              private fun drawFourPointStar(canvas: Canvas, cx: Float, cy: Float, r: Float, rotDeg: Float) {
+                  canvas.save(); canvas.translate(cx, cy); canvas.rotate(rotDeg)
+                  path.reset()
+                  path.moveTo(0f, -r); path.quadTo(0f, 0f, r, 0f)
+                  path.quadTo(0f, 0f, 0f, r); path.quadTo(0f, 0f, -r, 0f)
+                  path.quadTo(0f, 0f, 0f, -r); path.close()
+                  canvas.drawPath(path, paint)
+                  canvas.restore()
               }
 
               private fun drawBraidedRopeAndKnot(canvas: Canvas, ax: Float, ay: Float, mx: Float, my: Float, kx: Float, ky: Float) {
@@ -705,8 +815,7 @@ jobs:
                   val breathe = sin(simTime * 2.8f) * 1.5f
                   val climbCycle = sin(slidePos * 28f)
                   val activeTilt = if (fallAnimationEnabled) phoneTiltDeg else phoneTiltDeg * 0.25f
-                  val lookSway = if (currentTrick == IdleTrick.LOOK_AROUND) sin(trickPhase * 4f) * 6f else 0f
-                  val balanceLean = (activeTilt / 20f).coerceIn(-1f, 1f) * 6.5f + lookSway * 0.4f
+                  val balanceLean = (activeTilt / 20f).coerceIn(-1f, 1f) * 6.5f
                   val squash = landingSquash
                   val climbArmOffset = if (state == State.CLIMB_UP) climbCycle * 9f else 0f
                   val climbLegOffset = if (state == State.CLIMB_UP) -climbCycle * 8f else 0f
@@ -719,7 +828,7 @@ jobs:
                   val scrambleKick = sin(simTime * 8.0f) * 4.5f
                   val handGrabEffort = sin(simTime * 5.0f) * 3.5f
 
-                  val b = slipBlend
+                  val b = max(slipBlend, oneHandBlend * 0.85f)
                   fun lerp(a: Float, c: Float) = a + (c - a) * b
 
                   val hipX = lerp(-15f + balanceLean * 0.65f, hipSway)
@@ -735,26 +844,28 @@ jobs:
                   val rHandX = 0f
                   val rHandY = lerp(-52f - climbArmOffset, -25f)
 
-                  // Waving hand animation when IdleTrick.WAVE is active
-                  val isWaving = state == State.PERCHED && currentTrick == IdleTrick.WAVE
-                  val waveSwing = if (isWaving) sin(simTime * 14f) * 9f else 0f
-                  val lElbowX = lerp(if (isWaving) -28f else if (state == State.PERCHED) -24f + balanceLean * 0.5f else -6f, -9f + hipSway * 0.3f)
-                  val lElbowY = lerp(if (isWaving) -50f else if (state == State.PERCHED) -33f + squash * 0.6f + breathe else -36f, -5f + handGrabEffort * 0.5f)
-                  val lHandX = lerp(if (isWaving) -30f + waveSwing else if (state == State.PERCHED) -20f else 0f, -2f + handGrabEffort * 0.4f)
-                  val lHandY = lerp(if (isWaving) -66f else if (state == State.PERCHED) -18f + squash * 0.5f else -36f + climbArmOffset, -17f + handGrabEffort)
+                  val isWaving = state == State.PERCHED && (currentTrick == IdleTrick.WAVE || currentTrick == IdleTrick.ONE_HAND_HANG)
+                  val isKnocking = state == State.PERCHED && currentTrick == IdleTrick.SCREEN_KNOCK
+                  val waveSwing = if (isWaving) sin(simTime * 15f) * 10f else if (isKnocking) sin(trickPhase * 16f) * 6f else 0f
+                  val lElbowX = if (isKnocking) -18f else lerp(if (isWaving) -28f else if (state == State.PERCHED) -24f + balanceLean * 0.5f else -6f, -9f + hipSway * 0.3f)
+                  val lElbowY = if (isKnocking) -38f else lerp(if (isWaving) -50f else if (state == State.PERCHED) -33f + squash * 0.6f + breathe else -36f, -5f + handGrabEffort * 0.5f)
+                  val lHandX = if (isKnocking) -12f + waveSwing * 0.5f else lerp(if (isWaving) -30f + waveSwing else if (state == State.PERCHED) -20f else 0f, -2f + handGrabEffort * 0.4f)
+                  val lHandY = if (isKnocking) -35f + waveSwing else lerp(if (isWaving) -66f else if (state == State.PERCHED) -18f + squash * 0.5f else -36f + climbArmOffset, -17f + handGrabEffort)
 
+                  val trapKick = if (currentTrick == IdleTrick.TRAPEZE_SWING) sin(simTime * 9f) * 14f else sin(simTime * 3.2f) * 3f
                   val rKneeX = lerp(-5f, kneeLag + 3f)
                   val rKneeY = lerp(-10f + squash * 0.4f, 43f - abs(kneeLag) * 0.15f)
-                  val rFootX = lerp(0f, footLag + 2f + scrambleKick)
+                  val rFootX = lerp(0f + trapKick * 0.4f, footLag + 2f + scrambleKick)
                   val rFootY = lerp(2f + climbLegOffset, 59f - abs(footLag) * 0.2f + scrambleKick * 0.5f)
 
                   val lKneeX = lerp(-23f, kneeLag - 5f)
                   val lKneeY = lerp(-15f + squash * 0.5f + slideTuck, 40f - abs(kneeLag) * 0.15f)
-                  val lFootX = lerp(-1f + sin(simTime * 3.2f) * 2.5f, footLag - 6f - scrambleKick)
-                  val lFootY = lerp(-6f + slideTuck - climbLegOffset + cos(simTime * 3.2f) * 2f, 55f - abs(footLag) * 0.2f - scrambleKick * 0.5f)
+                  val lFootX = lerp(-1f + trapKick, footLag - 6f - scrambleKick)
+                  val lFootY = lerp(-6f + slideTuck - climbLegOffset + cos(simTime * 3.2f) * 2.5f, 55f - abs(footLag) * 0.2f - scrambleKick * 0.5f)
 
-                  val holeScale = min(1.12f, slidePos * 4.5f)
+                  val holeScale = min(1.12f, slidePos * 4.5f) * knockScale
                   val rotAngle = -ropeAngle * (1f - b * 0.5f)
+                  val totalRotDeg = ((rotAngle * 180f) / PI.toFloat()) + flipAngleDeg + upsideDownBlend * 175f
                   val limbColor = when (char) {
                       CharType.BOT -> Color.parseColor("#CBD5E1")
                       CharType.FOX -> Color.parseColor("#9A3412")
@@ -770,7 +881,7 @@ jobs:
                   canvas.save()
                   canvas.translate(charX, charY)
                   canvas.scale(holeScale, holeScale)
-                  canvas.rotate(((rotAngle * 180f) / PI.toFloat()) + flipAngleDeg, 0f, -30f)
+                  canvas.rotate(totalRotDeg, 0f, -26f)
 
                   drawSculptedLimb(canvas, shoulderX, shoulderY, rElbowX, rElbowY, rHandX, rHandY, 7.5f, 6.2f, 4.5f, limbColor)
                   paint.style = Paint.Style.FILL; paint.color = limbColor; canvas.drawCircle(rHandX, rHandY, 4.2f, paint)
@@ -783,10 +894,11 @@ jobs:
                   drawSculptedLimb(canvas, hipX, hipY, lKneeX, lKneeY, lFootX, lFootY, 11.0f, 8.2f, 5.2f, limbColor)
                   drawNinjaFoot(canvas, lFootX, lFootY, lFootX + 8f, lFootY - 1f, limbColor)
 
-                  drawCharacterHead(canvas, char, headX, headY, headTilt, b > 0.45f)
+                  val happyEyes = currentTrick == IdleTrick.WAVE || currentTrick == IdleTrick.UPSIDE_DOWN || currentTrick == IdleTrick.TRAPEZE_SWING
+                  drawCharacterHead(canvas, char, headX, headY, headTilt, b > 0.45f, happyEyes)
 
                   drawSculptedLimb(canvas, shoulderX, shoulderY, lElbowX, lElbowY, lHandX, lHandY, 8.0f, 6.5f, 4.6f, limbColor)
-                  paint.color = limbColor; canvas.drawCircle(lHandX, lHandY, 4.0f, paint)
+                  paint.color = limbColor; canvas.drawCircle(lHandX, lHandY, if (isKnocking) 5.5f else 4.0f, paint)
                   canvas.restore()
               }
 
@@ -831,13 +943,13 @@ jobs:
                           canvas.restore()
                       }
                       CharType.CAT -> {
-                          val tailWave = sin(simTime * 4.2f) * 10f
+                          val tailWave = sin(simTime * 4.5f) * 11f
                           paint.style = Paint.Style.STROKE; paint.strokeWidth = 5.2f; paint.strokeCap = Paint.Cap.ROUND
                           paint.color = Color.parseColor("#11131C"); path.reset(); path.moveTo(-4f, -2f)
                           path.cubicTo(-22f, -4f + tailWave * 0.5f, -28f, -22f + tailWave, -16f, -28f + tailWave); canvas.drawPath(path, paint)
                       }
                       CharType.FOX -> {
-                          val tailSway = sin(simTime * 3.5f) * 8f
+                          val tailSway = sin(simTime * 3.8f) * 9f
                           canvas.save(); canvas.translate(-5f, -3f); canvas.rotate(((-0.35f + tailSway * 0.025f) * 180f) / PI.toFloat())
                           paint.style = Paint.Style.FILL; paint.color = Color.parseColor("#EA580C"); path.reset(); path.moveTo(0f, 0f)
                           path.quadTo(-18f, -14f, -26f, -4f); path.quadTo(-34f, 4f, -20f, 11f); path.quadTo(-8f, 9f, 0f, 0f); path.close(); canvas.drawPath(path, paint)
@@ -865,10 +977,9 @@ jobs:
                   canvas.restore()
               }
 
-              private fun drawCharacterHead(canvas: Canvas, char: CharType, hx: Float, hy: Float, headTilt: Float, isSlipping: Boolean) {
+              private fun drawCharacterHead(canvas: Canvas, char: CharType, hx: Float, hy: Float, headTilt: Float, isSlipping: Boolean, happyEyes: Boolean) {
                   canvas.save(); canvas.translate(hx, hy); canvas.rotate((headTilt * 180f) / PI.toFloat())
-                  val lookOffset = if (currentTrick == IdleTrick.LOOK_AROUND) sin(trickPhase * 4f) * 3.2f else gazeX * 0.6f
-                  val ex = 2.8f + lookOffset; val ey = 2.0f
+                  val ex = 2.8f + gazeX * 0.65f; val ey = 2.0f
                   val eyeOpen = if (currentTrick == IdleTrick.SLEEP_ZZZ) 0.1f else (1.0f - blinkAmount).coerceAtLeast(0.08f)
                   paint.style = Paint.Style.FILL
 
@@ -878,7 +989,9 @@ jobs:
                           path.reset(); path.moveTo(-10f, -7f); path.lineTo(-15f, -11f); path.lineTo(-7f, -11f); path.lineTo(-11f, -15f); path.lineTo(-2f, -12.5f); path.close(); canvas.drawPath(path, paint)
                           paint.color = Color.parseColor("#E11D48"); path.reset(); path.moveTo(-12.6f, -4.5f); path.quadTo(1f, -6.5f, 12.6f, -3.5f); path.lineTo(12.8f, 1.2f); path.quadTo(1f, -1.5f, -12.8f, 0.5f); path.close(); canvas.drawPath(path, paint)
                           paint.color = Color.WHITE
-                          if (isSlipping) {
+                          if (happyEyes) {
+                              drawHappyArcEyes(canvas, ex, ey, Color.WHITE)
+                          } else if (isSlipping) {
                               rectF.set(ex - 6.1f, ey - 3f * eyeOpen, ex - 1.5f, ey + 3f * eyeOpen); canvas.drawOval(rectF, paint)
                               rectF.set(ex + 1.5f, ey - 3f * eyeOpen, ex + 6.1f, ey + 3f * eyeOpen); canvas.drawOval(rectF, paint)
                           } else {
@@ -887,7 +1000,7 @@ jobs:
                           }
                       }
                       CharType.CAT -> {
-                          val earTwitch = sin(simTime * 6.5f) * 1.3f
+                          val earTwitch = sin(simTime * 6.5f) * 1.4f
                           paint.color = Color.parseColor("#090B10")
                           path.reset(); path.moveTo(-11f, -5f); path.lineTo(-13f, -19f + earTwitch); path.lineTo(-2f, -11f); path.close(); canvas.drawPath(path, paint)
                           path.reset(); path.moveTo(2f, -11f); path.lineTo(12f, -19f - earTwitch); path.lineTo(11f, -5f); path.close(); canvas.drawPath(path, paint)
@@ -895,19 +1008,27 @@ jobs:
                           path.reset(); path.moveTo(-9.5f, -7f); path.lineTo(-11f, -15f + earTwitch); path.lineTo(-4f, -10f); path.close(); canvas.drawPath(path, paint)
                           path.reset(); path.moveTo(4f, -10f); path.lineTo(10f, -15f - earTwitch); path.lineTo(9.5f, -7f); path.close(); canvas.drawPath(path, paint)
                           paint.color = Color.parseColor("#090B10"); rectF.set(-13.5f, -12.2f, 13.5f, 12.2f); canvas.drawOval(rectF, paint)
-                          paint.color = Color.parseColor("#FDE047")
-                          rectF.set(ex - 7.4f, ey - 3.6f * eyeOpen, ex - 1.0f, ey + 3.6f * eyeOpen); canvas.drawOval(rectF, paint)
-                          rectF.set(ex + 1.0f, ey - 3.6f * eyeOpen, ex + 7.4f, ey + 3.6f * eyeOpen); canvas.drawOval(rectF, paint)
+                          if (happyEyes) {
+                              drawHappyArcEyes(canvas, ex, ey, Color.parseColor("#FDE047"))
+                          } else {
+                              paint.color = Color.parseColor("#FDE047")
+                              rectF.set(ex - 7.4f, ey - 3.6f * eyeOpen, ex - 1.0f, ey + 3.6f * eyeOpen); canvas.drawOval(rectF, paint)
+                              rectF.set(ex + 1.0f, ey - 3.6f * eyeOpen, ex + 7.4f, ey + 3.6f * eyeOpen); canvas.drawOval(rectF, paint)
+                          }
                       }
                       CharType.BOT -> {
-                          val antBob = sin(simTime * 7f) * 2.0f
+                          val antBob = sin(simTime * 7f) * 2.2f
                           paint.style = Paint.Style.STROKE; paint.strokeWidth = 2f; paint.color = Color.parseColor("#94A3B8"); canvas.drawLine(0f, -12f, antBob, -19f, paint)
                           paint.style = Paint.Style.FILL; paint.color = Color.parseColor("#06B6D4"); canvas.drawCircle(antBob, -20f, 2.8f, paint)
                           paint.color = Color.parseColor("#F8FAFC"); rectF.set(-13.5f, -12f, 13.5f, 11f); canvas.drawRoundRect(rectF, 11f, 11f, paint)
                           paint.color = Color.parseColor("#0F172A"); rectF.set(-10.5f, -7.5f, 11.5f, 7f); canvas.drawRoundRect(rectF, 7f, 7f, paint)
-                          paint.color = Color.parseColor("#22D3EE")
-                          rectF.set(ex - 6.4f, ey - 0.5f - 3f * eyeOpen, ex - 1.6f, ey - 0.5f + 3f * eyeOpen); canvas.drawOval(rectF, paint)
-                          rectF.set(ex + 1.6f, ey - 0.5f - 3f * eyeOpen, ex + 6.4f, ey - 0.5f + 3f * eyeOpen); canvas.drawOval(rectF, paint)
+                          if (happyEyes) {
+                              drawHappyArcEyes(canvas, ex, ey, Color.parseColor("#22D3EE"))
+                          } else {
+                              paint.color = Color.parseColor("#22D3EE")
+                              rectF.set(ex - 6.4f, ey - 0.5f - 3f * eyeOpen, ex - 1.6f, ey - 0.5f + 3f * eyeOpen); canvas.drawOval(rectF, paint)
+                              rectF.set(ex + 1.6f, ey - 0.5f - 3f * eyeOpen, ex + 6.4f, ey - 0.5f + 3f * eyeOpen); canvas.drawOval(rectF, paint)
+                          }
                       }
                       CharType.FOX -> {
                           paint.color = Color.parseColor("#EA580C")
@@ -918,12 +1039,23 @@ jobs:
                           path.reset(); path.moveTo(4f, -10f); path.lineTo(11.5f, -17f); path.lineTo(9f, -7f); path.close(); canvas.drawPath(path, paint)
                           paint.color = Color.parseColor("#EA580C"); canvas.drawCircle(0f, 0f, 12.8f, paint)
                           paint.color = Color.parseColor("#FFFBEB"); rectF.set(-12.5f, -0.7f, 0.5f, 9.7f); canvas.drawOval(rectF, paint); rectF.set(-0.5f, -0.7f, 12.5f, 9.7f); canvas.drawOval(rectF, paint)
-                          paint.color = Color.parseColor("#FEF08A")
-                          drawSlantedEye(canvas, ex - 3.8f, ey - 0.5f, 4.5f, 2.8f * eyeOpen, 0.15f)
-                          drawSlantedEye(canvas, ex + 3.8f, ey - 0.5f, 4.5f, 2.8f * eyeOpen, -0.15f)
+                          if (happyEyes) {
+                              drawHappyArcEyes(canvas, ex, ey, Color.parseColor("#FEF08A"))
+                          } else {
+                              paint.color = Color.parseColor("#FEF08A")
+                              drawSlantedEye(canvas, ex - 3.8f, ey - 0.5f, 4.5f, 2.8f * eyeOpen, 0.15f)
+                              drawSlantedEye(canvas, ex + 3.8f, ey - 0.5f, 4.5f, 2.8f * eyeOpen, -0.15f)
+                          }
                       }
                   }
                   canvas.restore()
+              }
+
+              private fun drawHappyArcEyes(canvas: Canvas, ex: Float, ey: Float, color: Int) {
+                  paint.style = Paint.Style.STROKE; paint.strokeWidth = 2.2f; paint.strokeCap = Paint.Cap.ROUND; paint.color = color
+                  path.reset(); path.moveTo(ex - 6.8f, ey + 1f); path.quadTo(ex - 4.0f, ey - 3.8f, ex - 1.2f, ey + 1f); canvas.drawPath(path, paint)
+                  path.reset(); path.moveTo(ex + 1.2f, ey + 1f); path.quadTo(ex + 4.0f, ey - 3.8f, ex + 6.8f, ey + 1f); canvas.drawPath(path, paint)
+                  paint.style = Paint.Style.FILL
               }
 
               private fun drawSlantedEye(canvas: Canvas, x: Float, y: Float, w: Float, h: Float, slant: Float) {
@@ -1006,7 +1138,7 @@ jobs:
                   }
                   canvas.save(); canvas.translate(leftX + padH, cursorY); bodyLayout.draw(canvas); canvas.restore()
 
-                  canvas.drawText("Tap friend: Trick & Next 💡  •  Double-tap: Hide", leftX + padH, bottomY - 10f * density, hintPaint)
+                  canvas.drawText("Tap friend: Next Trick 🎪  •  Double-tap: Hide", leftX + padH, bottomY - 10f * density, hintPaint)
                   paint.color = char.accentColor
                   rectF.set(leftX + padH, bottomY - 4.5f * density, leftX + padH + (boxW - padH * 2f) * progress, bottomY - 1.5f * density)
                   canvas.drawRoundRect(rectF, 2f * density, 2f * density, paint)
@@ -1348,7 +1480,7 @@ jobs:
                   // Header Row with Quotes: ON/OFF & Fall: ON/OFF
                   val topRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
                   val titleTv = TextView(this).apply {
-                      text = "Companion v4.0"; setTextColor(Color.WHITE); setTypeface(typeface, Typeface.BOLD); setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+                      text = "Companion v5.0"; setTextColor(Color.WHITE); setTypeface(typeface, Typeface.BOLD); setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
                       layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
                   }
                   val quotesBtn = Button(this).apply {
@@ -1389,7 +1521,7 @@ jobs:
                   topRow.addView(hideBtn, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(30)))
                   dock.addView(topRow)
 
-                  dock.addView(makeSectionLabel("Active Friend (Tap friend for 360° Flip & Tricks!)"))
+                  dock.addView(makeSectionLabel("Active Friend (Tap friend to cycle 7 Showstopper Tricks!)"))
                   val charRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
                   val charOptions = listOf("rotate" to "🔄 All", "0" to "🥷 Ninja", "1" to "🐱 Cat", "2" to "🤖 Bot", "3" to "🦊 Fox")
                   val charButtons = mutableListOf<Pair<String, Button>>()
@@ -1400,7 +1532,7 @@ jobs:
                               previewView.charMode = key
                               if (key != "rotate") previewView.activeCharIdx = key.toInt()
                               prefs.edit().putString("char_mode", key).apply()
-                              previewView.triggerShowstopperTrick(forceFlip = true)
+                              previewView.triggerShowstopperTrick(cycleNext = true)
                               if (previewView.state == CompanionOverlayView.State.PERCHED && previewView.quotesEnabled) previewView.speakWisdom("random")
                               charButtons.forEach { (k, b) -> b.background = roundedBg(if (k == key) "#E01937" else "#14FFFFFF", "#24FFFFFF", 9f) }
                           }
@@ -1449,9 +1581,9 @@ jobs:
 
                   val actRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, dp(6), 0, 0) }
                   actRow.addView(makeActionButton("In / Out", "#E01937") { previewView.toggleCompanion() }, LinearLayout.LayoutParams(0, dp(36), 1f).apply { rightMargin = dp(5) })
-                  actRow.addView(makeActionButton("Do Trick ✨", "#1AFFFFFF") {
+                  actRow.addView(makeActionButton("Trick 🎪", "#1AFFFFFF") {
                       if (previewView.state == CompanionOverlayView.State.INSIDE) previewView.deployCompanion(false)
-                      previewView.triggerShowstopperTrick(forceFlip = true)
+                      previewView.triggerShowstopperTrick(cycleNext = true)
                   }, LinearLayout.LayoutParams(0, dp(36), 1f).apply { rightMargin = dp(5) })
                   actRow.addView(makeActionButton("Quote 🧠", "#1AFFFFFF") {
                       if (previewView.state == CompanionOverlayView.State.INSIDE) previewView.deployCompanion(false)
