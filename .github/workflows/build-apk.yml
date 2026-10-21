@@ -38,18 +38,11 @@ jobs:
 
           cat << 'EOF' > settings.gradle.kts
           pluginManagement {
-              repositories {
-                  google()
-                  mavenCentral()
-                  gradlePluginPortal()
-              }
+              repositories { google(); mavenCentral(); gradlePluginPortal() }
           }
           dependencyResolutionManagement {
               repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-              repositories {
-                  google()
-                  mavenCentral()
-              }
+              repositories { google(); mavenCentral() }
           }
           rootProject.name = "PunchHoleCompanionKotlin"
           include(":app")
@@ -73,11 +66,9 @@ jobs:
               id("com.android.application")
               id("org.jetbrains.kotlin.android")
           }
-
           android {
               namespace = "com.companion.punchhole"
               compileSdk = 34
-
               defaultConfig {
                   applicationId = "com.companion.punchhole"
                   minSdk = 26
@@ -85,26 +76,17 @@ jobs:
                   versionCode = 4
                   versionName = "4.0-kotlin"
               }
-
-              buildTypes {
-                  release {
-                      isMinifyEnabled = false
-                  }
-              }
               compileOptions {
                   sourceCompatibility = JavaVersion.VERSION_17
                   targetCompatibility = JavaVersion.VERSION_17
               }
-              kotlinOptions {
-                  jvmTarget = "17"
-              }
+              kotlinOptions { jvmTarget = "17" }
           }
           EOF
 
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-
               <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
               <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
               <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
@@ -155,21 +137,13 @@ jobs:
           EOF
 
           cat << 'EOF' > app/src/main/res/drawable/ic_launcher_background.xml
-          <vector xmlns:android="http://schemas.android.com/apk/res/android"
-              android:width="108dp"
-              android:height="108dp"
-              android:viewportWidth="108"
-              android:viewportHeight="108">
+          <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
               <path android:fillColor="#3F46CC" android:pathData="M0,0h108v108h-108z"/>
           </vector>
           EOF
 
           cat << 'EOF' > app/src/main/res/drawable/ic_launcher_foreground.xml
-          <vector xmlns:android="http://schemas.android.com/apk/res/android"
-              android:width="108dp"
-              android:height="108dp"
-              android:viewportWidth="108"
-              android:viewportHeight="108">
+          <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
               <path android:fillColor="#141722" android:pathData="M52,18h4v42h-4z"/>
               <path android:fillColor="#090B10" android:pathData="M54,58m-18,0a18,18 0,1 1,36 0a18,18 0,1 1,-36 0"/>
               <path android:fillColor="#E11D48" android:pathData="M36,52h36v6h-36z"/>
@@ -199,51 +173,1405 @@ jobs:
                   "Discipline is choosing between what you want now and what you want most.",
                   "Your future self is depending on the work you put in today.",
                   "Action cures anxiety. Dive into your task for just 5 minutes!",
-                  "Take a deep breath. You are far more capable than you realize.",
                   "Small daily improvements over time lead to stunning results.",
                   "Energy flows where attention goes. Guard your focus fiercely.",
-                  "Amateurs sit and wait for inspiration; pros get up and go to work.",
-                  "Do the hardest task first thing. Everything else feels effortless after.",
-                  "Consistency beats intensity. Show up today, even if it's small."
+                  "Do the hardest task first thing. Everything else feels effortless after."
               )
               private val workChecks = listOf(
-                  "Time for a deep work sprint! Put your phone face down and crush it for 25 minutes. 💻",
-                  "Stand up, roll your shoulders back, take 3 deep breaths, and reset your posture! 🌟",
-                  "Break your big project into three tiny tasks. Which one starts right now?",
-                  "Clear your workspace and close extra tabs. A clean space creates a sharp mind.",
+                  "Time for a deep work sprint! Put your phone face down for 25 minutes. 💻",
+                  "Stand up, roll your shoulders back, take 3 deep breaths, and reset! 🌟",
                   "Single-tasking is a superpower. Do one thing right now with 100% presence.",
                   "Drink a glass of water! Even 2% dehydration drops cognitive focus by 15%.",
-                  "Ask yourself: 'If I only accomplished one thing today, what would make me proud?'",
                   "20-20-20 Eye Reset: Look at something 20 feet away for 20 seconds right now."
               )
               private val psychPrinciples = listOf(
                   "Benjamin Franklin Effect" to "Want someone to like you? Ask them for a small favor. Our brains justify helping someone by deciding we like them.",
-                  "Foot-in-the-Door" to "To achieve a massive goal or agreement, start with a tiny request first. Momentum snowballs naturally.",
                   "The Zeigarnik Effect" to "Your brain remembers unfinished tasks far better than completed ones. Simply starting for 2 minutes silences procrastination!",
-                  "The 2-Minute Rule" to "If a task takes less than 2 minutes to do, do it immediately instead of scheduling it. It eliminates mental clutter.",
-                  "Social Proof" to "We unconsciously mirror the habits of our peers. Surround yourself with focused, driven people to elevate your baseline.",
-                  "The Pygmalion Effect" to "Higher expectations directly lead to higher performance—both in how you treat others and how you view yourself.",
-                  "Scarcity Principle" to "People value things more when availability is limited. Treat your time and attention as your scarcest assets.",
-                  "Reciprocity Norm" to "Giving value, kindness, or recognition first creates a natural psychological desire for others to reciprocate.",
+                  "The 2-Minute Rule" to "If a task takes less than 2 minutes to do, do it immediately instead of scheduling it.",
+                  "The Pygmalion Effect" to "Higher expectations directly lead to higher performance—both in how you treat others and yourself.",
                   "Tactical Silence" to "In negotiations or deep conversations, pause for 4 seconds after someone speaks. They will often reveal the real truth.",
                   "Labeling Emotion" to "Saying 'It sounds like you feel frustrated' deactivates the brain's threat center and builds instant trust.",
-                  "Implementation Intentions" to "Saying 'I will do X at time Y in place Z' triples your follow-through compared to vague goals.",
-                  "The Pratfall Effect" to "Competent people become more likable when they admit a small flaw. Perfection creates distance; authenticity connects."
+                  "The Pratfall Effect" to "Competent people become more likable when they admit a small flaw. Authenticity connects."
               )
               private val cognitiveBiases = listOf(
-                  "Dunning-Kruger Effect" to "Beginners often overestimate their skill, while experts underestimate theirs. Stay curious and keep learning!",
-                  "Confirmation Bias" to "Our brains filter for evidence that agrees with us. Actively ask: 'What would prove my current belief wrong?'",
-                  "Loss Aversion" to "Losing $100 hurts twice as much as gaining $100 feels good. Don't let fear of a small loss stop a smart risk.",
-                  "Anchoring Bias" to "We rely too heavily on the first number or idea we hear. Always reset and evaluate value from scratch.",
-                  "Sunk Cost Fallacy" to "Continuing a bad project just because you already spent time or money on it. Only future value matters!",
-                  "Attribution Error" to "We judge others by their character, but excuse ourselves by our situation. Practice generous empathy.",
-                  "Availability Heuristic" to "We judge probability by how easily examples pop into memory. Look at real statistics, not dramatic headlines.",
+                  "Dunning-Kruger Effect" to "Beginners often overestimate their skill, while experts underestimate theirs. Stay curious!",
+                  "Confirmation Bias" to "Our brains filter for evidence that agrees with us. Actively ask: 'What would prove me wrong?'",
+                  "Loss Aversion" to "Losing $100 hurts twice as much as gaining $100 feels good. Don't let fear block smart risks.",
+                  "Sunk Cost Fallacy" to "Continuing a bad project just because you already spent time on it. Only future value matters!",
                   "Spotlight Effect" to "We think everyone notices our stumbles, but people are 99% focused on themselves. Move boldly!",
-                  "Survivorship Bias" to "Studying only winners hides the thousands who used the exact same strategy and failed. Study failure too.",
-                  "Planning Fallacy" to "We always assume tasks will go according to the best-case scenario. Multiply your time estimates by 1.5x."
+                  "Planning Fallacy" to "We always assume tasks will go according to the best-case scenario. Multiply time estimates by 1.5x."
               )
               private val stoicMaxims = listOf(
                   "Marcus Aurelius" to "'The impediment to action advances action. What stands in the way becomes the way.'",
                   "Seneca on Time" to "'It is not that we have a short time to live, but that we waste a lot of it.'",
                   "Aristotle" to "'We are what we repeatedly do. Excellence, then, is not an act, but a habit.'",
-                  "Carl Jung" to "'Until you make the unconscious conscious, it will direct your life and you
+                  "Epictetus" to "'Make the best use of what is in your power, and take the rest as it happens.'",
+                  "Viktor Frankl" to "'Between stimulus and response there is a space. In that space is our power to choose.'",
+                  "Seneca on Fear" to "'We suffer more often in imagination than in reality.'",
+                  "Miyamoto Musashi" to "'Do nothing which is of no use. Step by step walk the thousand-mile road.'"
+              )
+              private val mentalModels = listOf(
+                  "Pareto 80/20 Rule" to "80% of your results come from 20% of your efforts. Double down on your highest-leverage 20%.",
+                  "Parkinson's Law" to "Work expands to fill the time available for its completion. Set shorter, tighter deadlines.",
+                  "First Principles" to "Break complex problems down to their fundamental truths and build up from there.",
+                  "Inversion Model" to "Instead of asking how to succeed, ask 'What would guarantee failure?'—and avoid those traps.",
+                  "Occam's Razor" to "Among competing explanations, the simplest one with the fewest assumptions is usually right."
+              )
+
+              private val decks = mutableMapOf<String, ArrayDeque<Int>>()
+              private fun <T> nextFromDeck(key: String, list: List<T>): T {
+                  val q = decks.getOrPut(key) { ArrayDeque() }
+                  if (q.isEmpty()) q.addAll(list.indices.shuffled(Random.Default))
+                  return list[q.removeFirst()]
+              }
+
+              fun getWisdom(type: String = "random"): WisdomItem {
+                  val chosen = if (type == "random") listOf("motivation", "time", "work", "trick", "bias", "maxim", "model").random() else type
+                  return when (chosen) {
+                      "motivation" -> WisdomItem("Motivation 🔥", "Daily Drive", nextFromDeck("mot", motivation))
+                      "time" -> {
+                          val cal = Calendar.getInstance()
+                          val h24 = cal.get(Calendar.HOUR_OF_DAY)
+                          val h12 = if (h24 % 12 == 0) 12 else h24 % 12
+                          val min = String.format("%02d", cal.get(Calendar.MINUTE))
+                          val ampm = if (h24 < 12) "AM" else "PM"
+                          val msg = if (h24 < 12) "Prime morning focus window—tackle your #1 priority! ☀️"
+                                    else if (h24 < 17) "Afternoon power hours! Stay hydrated and sharp! 🚀"
+                                    else "Wrap up your key goals and recharge your mind! 🌙"
+                          WisdomItem("Time Check ⏰", "It's $h12:$min $ampm", msg)
+                      }
+                      "work" -> WisdomItem("Focus & Action 💼", "Deep Work Sprint", nextFromDeck("work", workChecks))
+                      "trick" -> nextFromDeck("trick", psychPrinciples).let { WisdomItem("Psych Principle 🧠", it.first, it.second) }
+                      "bias" -> nextFromDeck("bias", cognitiveBiases).let { WisdomItem("Cognitive Bias 📐", it.first, it.second) }
+                      "maxim" -> nextFromDeck("maxim", stoicMaxims).let { WisdomItem("Stoic Maxim 🏛️", it.first, it.second) }
+                      else -> nextFromDeck("model", mentalModels).let { WisdomItem("Mental Model ⚙️", it.first, it.second) }
+                  }
+              }
+          }
+          EOF
+
+          cat << 'EOF' > app/src/main/java/com/companion/punchhole/CompanionOverlayView.kt
+          package com.companion.punchhole
+
+          import android.content.Context
+          import android.graphics.*
+          import android.os.SystemClock
+          import android.text.Layout
+          import android.text.StaticLayout
+          import android.text.TextPaint
+          import android.view.Choreographer
+          import android.view.GestureDetector
+          import android.view.MotionEvent
+          import android.view.View
+          import kotlin.math.*
+          import kotlin.random.Random
+
+          class CompanionOverlayView(
+              context: Context,
+              val isSystemOverlay: Boolean,
+              var onStateChanged: ((Boolean) -> Unit)? = null,
+              var onCharacterBoundsUpdated: ((Float, Float, Boolean) -> Unit)? = null
+          ) : View(context), Choreographer.FrameCallback {
+
+              enum class State { INSIDE, DROP_ROPE, SLIDE_DOWN, PERCHED, CLIMB_UP, RETRACT_ROPE }
+              enum class CharType(val displayName: String, val accentColor: Int) {
+                  NINJA("SHINOBI", Color.parseColor("#FF2E54")),
+                  CAT("KURO NEKO", Color.parseColor("#FBBF24")),
+                  BOT("BIBI BOT", Color.parseColor("#22D3EE")),
+                  FOX("KITSUNE", Color.parseColor("#FB923C"))
+              }
+              enum class IdleTrick { NONE, WAVE, BACKFLIP, LOOK_AROUND, SLEEP_ZZZ }
+
+              private data class Particle(var x: Float, var y: Float, var vx: Float, var vy: Float, var size: Float, var alpha: Float, var color: Int)
+
+              private val density = resources.displayMetrics.density
+              private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+              private val titlePaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD) }
+              private val bodyPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#F1F5F9"); typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL) }
+              private val headerPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 11.5f * density; typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD) }
+              private val hintPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 10f * density; color = Color.parseColor("#94A3B8") }
+              private val path = Path()
+              private val rectF = RectF()
+              private val goldGradient = LinearGradient(-5f, 0f, 5f, 0f, intArrayOf(Color.parseColor("#B45309"), Color.parseColor("#FDE047"), Color.parseColor("#92400E")), floatArrayOf(0f, 0.5f, 1f), Shader.TileMode.CLAMP)
+
+              var charMode: String = "rotate"
+              var activeCharIdx: Int = 0
+              var visitIntervalSec: Int = 120
+              var visitCountdown: Int = 120
+              var hangOutTimer: Int = 26
+              var camTopOffsetDp: Float = 6f
+              var camLeftOffsetDp: Float = 0f
+              var targetRopeRatio: Float = 0.28f
+              var bubbleDisplaySec: Int = 9
+              var textSizeSp: Int = 16
+              var fallAnimationEnabled: Boolean = true
+              var quotesEnabled: Boolean = true
+              var isLandscapePaused: Boolean = false
+
+              var state: State = State.DROP_ROPE
+                  private set
+              private var ropeExtend = 0.02f; private var ropeExtendVel = 0.035f
+              private var slidePos = 0f; private var slideVel = 0f
+              private var ropeAngle = 0f; private var ropeAngVel = 0f
+              private var ropeStretch = 0f; private var ropeStretchVel = 0f
+              private var midRopeBow = 0f; private var tasselAngle = 0f; private var tasselAngVel = 0f
+
+              var phoneTiltDeg = 0f; private var smoothTiltRad = 0f
+              private var slipBlend = 0f; private var wasSlipping = false
+              private var legSwingAngle = 0f; private var legSwingVel = 0f
+              private var landingSquash = 0f; private var landingSquashVel = 0f
+
+              // Natural Animations & Showstopper Tricks
+              private var simTime = 0f
+              private var portalPulse = 1f
+              private var currentTrick = IdleTrick.NONE
+              private var trickPhase = 0f
+              private var nextTrickCountdown = 180
+              private var flipAngleDeg = 0f
+              private var blinkTimer = 90; private var blinkAmount = 0f
+              private var gazeX = 0f; private var targetGazeX = 0f; private var gazeTimer = 110
+              private val ribbonNodes = Array(8) { PointF(0f, 0f) }
+              private val particles = ArrayList<Particle>(28)
+
+              private var currentWisdom: WisdomItem? = null
+              private var bubbleStartMs = 0L; private var bubbleDurationMs = 9000L
+              private var cachedTitleLayout: StaticLayout? = null; private var cachedBodyLayout: StaticLayout? = null
+              private var loopActive = false
+              private var lastSecondTickMs = SystemClock.elapsedRealtime()
+              private var lastCharXDp = 0f; private var lastCharYDp = 0f
+
+              private val gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
+                  override fun onDown(e: MotionEvent): Boolean = true
+                  override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                      val tapX = e.x / density; val tapY = e.y / density
+                      val anchorX = (width / density) / 2f + camLeftOffsetDp; val anchorY = camTopOffsetDp + 17f
+                      if (hypot(tapX - anchorX, tapY - anchorY) < 48f) { toggleCompanion(); return true }
+                      if (state != State.INSIDE && hypot(tapX - lastCharXDp, tapY - (lastCharYDp - 28f)) < 75f) { onCharacterSingleTap(); return true }
+                      return false
+                  }
+                  override fun onDoubleTap(e: MotionEvent): Boolean {
+                      val tapX = e.x / density; val tapY = e.y / density
+                      if (state != State.INSIDE && hypot(tapX - lastCharXDp, tapY - (lastCharYDp - 28f)) < 85f) { retractCompanion(); return true }
+                      return false
+                  }
+                  override fun onScroll(e1: MotionEvent?, e2: MotionEvent, dx: Float, dy: Float): Boolean {
+                      if (state == State.PERCHED) { applyHorizontalImpulse(-dx); return true }
+                      return false
+                  }
+              })
+
+              private val tickerRunnable = object : Runnable {
+                  override fun run() { onSecondTick(); postDelayed(this, 1000L) }
+              }
+
+              override fun onAttachedToWindow() { super.onAttachedToWindow(); lastSecondTickMs = SystemClock.elapsedRealtime(); post(tickerRunnable); startLoop() }
+              override fun onDetachedFromWindow() { removeCallbacks(tickerRunnable); stopLoop(); super.onDetachedFromWindow() }
+
+              fun startLoop() {
+                  if (!loopActive && !isLandscapePaused) {
+                      loopActive = true
+                      onStateChanged?.invoke(state != State.INSIDE)
+                      Choreographer.getInstance().postFrameCallback(this)
+                  }
+              }
+              private fun stopLoop() { if (loopActive) { loopActive = false; Choreographer.getInstance().removeFrameCallback(this) } }
+
+              override fun doFrame(frameTimeNanos: Long) {
+                  if (!loopActive) return
+                  updatePhysics()
+                  invalidate()
+                  if (state == State.INSIDE || isLandscapePaused) {
+                      loopActive = false
+                      onStateChanged?.invoke(false)
+                      onCharacterBoundsUpdated?.invoke(0f, 0f, false)
+                      invalidate()
+                      return
+                  }
+                  Choreographer.getInstance().postFrameCallback(this)
+              }
+
+              private fun onSecondTick() {
+                  val now = SystemClock.elapsedRealtime()
+                  val elapsedSec = max(1, ((now - lastSecondTickMs) / 1000L).toInt())
+                  lastSecondTickMs = now
+                  if (isLandscapePaused) return
+                  if (visitIntervalSec <= 0) { if (state == State.INSIDE) deployCompanion(false); return }
+                  if (state == State.PERCHED) {
+                      hangOutTimer -= elapsedSec
+                      if (hangOutTimer <= 0) retractCompanion()
+                  } else if (state == State.INSIDE) {
+                      visitCountdown -= elapsedSec
+                      if (visitCountdown <= 0) {
+                          visitCountdown = visitIntervalSec
+                          deployCompanion(true)
+                      }
+                  }
+              }
+
+              fun spawnParticleBurst(cx: Float, cy: Float, count: Int = 14) {
+                  val char = CharType.values()[activeCharIdx.coerceIn(0, 3)]
+                  repeat(count) {
+                      if (particles.size < 32) {
+                          val ang = Random.nextFloat() * PI.toFloat() * 2f
+                          val spd = 0.8f + Random.nextFloat() * 2.6f
+                          particles.add(Particle(cx, cy, cos(ang) * spd, sin(ang) * spd - 0.9f, 2.2f + Random.nextFloat() * 2.5f, 1f, char.accentColor))
+                      }
+                  }
+              }
+
+              fun triggerShowstopperTrick(forceFlip: Boolean = false) {
+                  currentTrick = if (forceFlip) IdleTrick.BACKFLIP else listOf(IdleTrick.WAVE, IdleTrick.BACKFLIP, IdleTrick.LOOK_AROUND, IdleTrick.SLEEP_ZZZ).random()
+                  trickPhase = 0f
+                  if (currentTrick == IdleTrick.BACKFLIP) {
+                      ropeStretchVel = -4.2f
+                      landingSquashVel = 3.5f
+                      spawnParticleBurst(lastCharXDp, lastCharYDp - 30f, 16)
+                  } else if (currentTrick == IdleTrick.WAVE) {
+                      spawnParticleBurst(lastCharXDp, lastCharYDp - 45f, 8)
+                  }
+              }
+
+              fun onCharacterSingleTap() {
+                  if (state == State.INSIDE || state == State.RETRACT_ROPE) {
+                      deployCompanion(true)
+                  } else {
+                      hangOutTimer = max(hangOutTimer, bubbleDisplaySec + 8)
+                      triggerShowstopperTrick(forceFlip = !quotesEnabled || Random.nextBoolean())
+                      ropeAngVel += if (Random.nextBoolean()) 0.022f else -0.022f
+                      if (quotesEnabled) speakWisdom("random") else currentWisdom = null
+                  }
+              }
+
+              fun applyHorizontalImpulse(deltaPx: Float) {
+                  ropeAngVel = (ropeAngVel + (deltaPx / density) * 0.0012f).coerceIn(-0.08f, 0.08f)
+                  startLoop()
+              }
+
+              fun deployCompanion(advance: Boolean = false) {
+                  if (isLandscapePaused) return
+                  if (advance) activeCharIdx = if (charMode == "rotate") (activeCharIdx + 1) % 4 else (charMode.toIntOrNull() ?: 0)
+                  state = State.DROP_ROPE
+                  ropeExtend = 0.02f; ropeExtendVel = 0.035f; slidePos = 0f; slideVel = 0f
+                  portalPulse = 1.0f
+                  hangOutTimer = max(26, bubbleDisplaySec + 6)
+                  lastSecondTickMs = SystemClock.elapsedRealtime()
+                  onStateChanged?.invoke(true)
+                  startLoop()
+              }
+
+              fun retractCompanion() {
+                  currentWisdom = null
+                  currentTrick = IdleTrick.NONE
+                  flipAngleDeg = 0f
+                  portalPulse = 1.0f
+                  state = State.CLIMB_UP
+                  slideVel = 0f
+                  visitCountdown = visitIntervalSec
+                  lastSecondTickMs = SystemClock.elapsedRealtime()
+                  startLoop()
+              }
+
+              fun toggleCompanion() {
+                  if (state == State.INSIDE || state == State.RETRACT_ROPE) deployCompanion(true) else retractCompanion()
+              }
+
+              fun rebuildBubbleLayouts() {
+                  if (!quotesEnabled) { currentWisdom = null; return }
+                  val item = currentWisdom ?: return
+                  val maxW = (min(width.takeIf { it > 0 } ?: resources.displayMetrics.widthPixels, (310 * density).toInt()) - (36 * density).toInt()).coerceAtLeast((200 * density).toInt())
+                  titlePaint.textSize = (textSizeSp + 1f) * density
+                  bodyPaint.textSize = textSizeSp * density
+                  cachedTitleLayout = item.title?.takeIf { it.isNotBlank() }?.let {
+                      StaticLayout.Builder.obtain(it, 0, it.length, titlePaint, maxW).setAlignment(Layout.Alignment.ALIGN_NORMAL).setLineSpacing(0f, 1.1f).build()
+                  }
+                  cachedBodyLayout = StaticLayout.Builder.obtain(item.body, 0, item.body.length, bodyPaint, maxW).setAlignment(Layout.Alignment.ALIGN_NORMAL).setLineSpacing(0f, 1.22f).build()
+              }
+
+              fun speakWisdom(category: String = "random") {
+                  if (!quotesEnabled || state == State.INSIDE || state == State.RETRACT_ROPE || isLandscapePaused) {
+                      if (!quotesEnabled) currentWisdom = null
+                      return
+                  }
+                  currentWisdom = WisdomRepository.getWisdom(category)
+                  bubbleDurationMs = bubbleDisplaySec * 1000L
+                  bubbleStartMs = SystemClock.elapsedRealtime()
+                  hangOutTimer = max(hangOutTimer, bubbleDisplaySec + 6)
+                  rebuildBubbleLayouts()
+                  startLoop()
+                  invalidate()
+              }
+
+              private fun updatePhysics() {
+                  simTime += 0.016f
+                  portalPulse = max(0f, portalPulse - 0.022f)
+
+                  when (state) {
+                      State.DROP_ROPE -> {
+                          ropeExtendVel += 0.0045f; ropeExtend += ropeExtendVel
+                          if (ropeExtend >= 1f) { ropeExtend = 1f; ropeExtendVel = 0f; ropeStretchVel = 2.6f; state = State.SLIDE_DOWN; slidePos = 0.04f; slideVel = 0.024f }
+                      }
+                      State.SLIDE_DOWN -> {
+                          slideVel = min(0.052f, slideVel + 0.003f)
+                          slidePos += min(slideVel, (1f - slidePos) * 0.22f + 0.008f)
+                          if (slidePos >= 0.995f) {
+                              slidePos = 1f; state = State.PERCHED; landingSquashVel = 3.8f; ropeStretchVel = 4.2f; ropeAngVel += 0.015f
+                              spawnParticleBurst(lastCharXDp, lastCharYDp - 20f, 12)
+                              triggerShowstopperTrick(forceFlip = false)
+                              if (quotesEnabled) postDelayed({ if (state == State.PERCHED && quotesEnabled) speakWisdom("random") }, 350L)
+                          }
+                      }
+                      State.CLIMB_UP -> {
+                          slidePos -= 0.032f; ropeAngVel *= 0.9f
+                          if (slidePos <= 0.02f) { slidePos = 0f; state = State.RETRACT_ROPE; portalPulse = 1.0f }
+                      }
+                      State.RETRACT_ROPE -> {
+                          ropeExtend -= 0.085f; ropeAngle *= 0.8f
+                          if (ropeExtend <= 0f) { ropeExtend = 0f; state = State.INSIDE }
+                      }
+                      State.PERCHED, State.INSIDE -> {}
+                  }
+                  if (state == State.INSIDE) return
+
+                  // Ambient floating particles & Trick state machine
+                  if (state == State.PERCHED) {
+                      if (Random.nextInt(14) == 0 && particles.size < 20) {
+                          val char = CharType.values()[activeCharIdx.coerceIn(0, 3)]
+                          particles.add(Particle(lastCharXDp + (Random.nextFloat() - 0.5f) * 38f, lastCharYDp - Random.nextFloat() * 55f, (Random.nextFloat() - 0.5f) * 0.4f, -0.4f - Random.nextFloat() * 0.5f, 1.8f + Random.nextFloat() * 2f, 0.9f, char.accentColor))
+                      }
+                      if (currentTrick != IdleTrick.NONE) {
+                          trickPhase += 0.025f
+                          if (currentTrick == IdleTrick.BACKFLIP) {
+                              flipAngleDeg = (trickPhase * 360f * 1.4f).coerceAtMost(360f)
+                              if (flipAngleDeg >= 360f) { flipAngleDeg = 0f; currentTrick = IdleTrick.NONE }
+                          } else if (trickPhase >= 2.6f) {
+                              currentTrick = IdleTrick.NONE
+                          }
+                      } else if (--nextTrickCountdown <= 0) {
+                          nextTrickCountdown = 150 + Random.nextInt(140)
+                          triggerShowstopperTrick(forceFlip = false)
+                      }
+                  }
+
+                  val it = particles.iterator()
+                  while (it.hasNext()) {
+                      val pt = it.next()
+                      pt.x += pt.vx; pt.y += pt.vy; pt.alpha -= 0.022f
+                      if (pt.alpha <= 0f) it.remove()
+                  }
+
+                  val targetTiltRad = (phoneTiltDeg * PI.toFloat()) / 180f
+                  smoothTiltRad += (targetTiltRad - smoothTiltRad) * 0.08f
+                  val breeze = sin(simTime * 1.5f) * 0.00022f
+                  ropeAngVel = (ropeAngVel + (-0.026f * (ropeAngle - smoothTiltRad * 0.36f) + breeze)) * 0.935f
+                  ropeAngle = (ropeAngle + ropeAngVel).coerceIn(-0.34f, 0.34f)
+                  midRopeBow += (-ropeAngVel * 135f - midRopeBow) * 0.18f
+
+                  tasselAngVel = (tasselAngVel - 0.04f * (tasselAngle - smoothTiltRad * 0.5f) - ropeAngVel * 0.35f) * 0.90f
+                  tasselAngle += tasselAngVel
+                  ropeStretchVel += -0.18f * ropeStretch - 0.22f * ropeStretchVel; ropeStretch += ropeStretchVel
+                  landingSquashVel += -0.22f * landingSquash - 0.25f * landingSquashVel
+                  landingSquash = (landingSquash + landingSquashVel).coerceIn(-4f, 14f)
+
+                  val shouldSlip = fallAnimationEnabled && state == State.PERCHED && abs(phoneTiltDeg) >= 20f
+                  if (shouldSlip && !wasSlipping) { ropeStretchVel += 4.5f; ropeAngVel += if (phoneTiltDeg > 0) 0.01f else -0.01f }
+                  wasSlipping = shouldSlip
+                  slipBlend += ((if (shouldSlip) 1f else 0f) - slipBlend) * 0.085f
+
+                  val gravityLegTarget = smoothTiltRad * 0.55f + sin(simTime * 3.8f) * 0.16f
+                  legSwingVel = (legSwingVel + (-0.045f * (legSwingAngle - gravityLegTarget) - ropeAngVel * 1.4f)) * 0.91f
+                  legSwingAngle += legSwingVel
+
+                  if (--blinkTimer <= 0) {
+                      blinkAmount = min(1f, blinkAmount + 0.35f)
+                      if (blinkTimer < -5) blinkTimer = 100 + Random.nextInt(130)
+                  } else blinkAmount = max(0f, blinkAmount - 0.35f)
+
+                  if (--gazeTimer <= 0) {
+                      targetGazeX = (Random.nextFloat() - 0.5f) * 3.4f
+                      gazeTimer = 70 + Random.nextInt(110)
+                  }
+                  gazeX += (targetGazeX - gazeX) * 0.14f
+              }
+
+              override fun onDraw(canvas: Canvas) {
+                  super.onDraw(canvas)
+                  if (isLandscapePaused) return
+
+                  val widthDp = width / density; val heightDp = height / density
+                  val anchorX = widthDp / 2f + camLeftOffsetDp; val anchorY = camTopOffsetDp + 16f
+                  val char = CharType.values()[activeCharIdx.coerceIn(0, 3)]
+
+                  canvas.save()
+                  canvas.scale(density, density)
+
+                  if (!isSystemOverlay) {
+                      paint.style = Paint.Style.FILL; paint.color = Color.parseColor("#050608")
+                      rectF.set(anchorX - 18f, camTopOffsetDp - 2f, anchorX + 18f, camTopOffsetDp + 34f)
+                      canvas.drawRoundRect(rectF, 999f, 999f, paint)
+                  }
+
+                  // Glowing Camera Portal Ring when deploying/retracting
+                  if (portalPulse > 0.02f) {
+                      paint.style = Paint.Style.STROKE
+                      paint.strokeWidth = 2.8f * portalPulse
+                      paint.color = char.accentColor
+                      paint.alpha = (portalPulse * 230).toInt().coerceIn(0, 255)
+                      canvas.drawCircle(anchorX, anchorY, 17f + (1f - portalPulse) * 12f, paint)
+                      paint.alpha = 255
+                  }
+
+                  if (state == State.INSIDE) { canvas.restore(); return }
+
+                  val maxRopeLen = min(heightDp * targetRopeRatio, 230f)
+                  val currentRopeLen = maxRopeLen * ropeExtend + ropeStretch
+                  val sinA = sin(ropeAngle); val cosA = cos(ropeAngle)
+                  val knotX = anchorX + sinA * currentRopeLen; val knotY = anchorY + cosA * currentRopeLen
+                  val midX = anchorX + sinA * (currentRopeLen * 0.5f) + cosA * midRopeBow
+                  val midY = anchorY + cosA * (currentRopeLen * 0.5f) - sinA * midRopeBow
+
+                  drawBraidedRopeAndKnot(canvas, anchorX, anchorY, midX, midY, knotX, knotY)
+
+                  if (state == State.SLIDE_DOWN || state == State.PERCHED || state == State.CLIMB_UP) {
+                      val t = slidePos; val invT = 1f - t
+                      val charX = invT * invT * anchorX + 2f * invT * t * midX + t * t * knotX
+                      val charY = invT * invT * anchorY + 2f * invT * t * midY + t * t * knotY
+
+                      lastCharXDp = charX; lastCharYDp = charY
+                      onCharacterBoundsUpdated?.invoke(charX - widthDp / 2f, charY - 32f, state == State.PERCHED)
+
+                      // Draw Floating Theme Particles
+                      paint.style = Paint.Style.FILL
+                      for (pt in particles) {
+                          paint.color = pt.color
+                          paint.alpha = (pt.alpha * 240).toInt().coerceIn(0, 255)
+                          canvas.drawCircle(pt.x, pt.y, pt.size, paint)
+                      }
+                      paint.alpha = 255
+
+                      drawCharacterPose(canvas, char, charX, charY, currentRopeLen)
+
+                      // Floating Zzz sleep bubbles during SLEEP_ZZZ trick
+                      if (currentTrick == IdleTrick.SLEEP_ZZZ && state == State.PERCHED) {
+                          headerPaint.color = char.accentColor
+                          val zOff = (trickPhase * 12f) % 18f
+                          canvas.drawText("Z", charX + 14f + zOff * 0.4f, charY - 68f - zOff, headerPaint)
+                          canvas.drawText("z", charX + 22f + zOff * 0.6f, charY - 76f - zOff * 1.2f, headerPaint)
+                      }
+
+                      canvas.restore()
+                      if (quotesEnabled) drawSpeechBubbleBelowCharacter(canvas, char, charX * density, (knotY + 30f) * density)
+                  } else {
+                      onCharacterBoundsUpdated?.invoke(0f, 0f, false)
+                      canvas.restore()
+                  }
+              }
+
+              private fun drawBraidedRopeAndKnot(canvas: Canvas, ax: Float, ay: Float, mx: Float, my: Float, kx: Float, ky: Float) {
+                  paint.style = Paint.Style.STROKE; paint.strokeCap = Paint.Cap.ROUND
+                  path.reset(); path.moveTo(ax + 2f, ay + 2f); path.quadTo(mx + 2f, my + 2f, kx + 2f, ky + 2f)
+                  paint.color = Color.argb(72, 0, 0, 0); paint.strokeWidth = 5.5f; canvas.drawPath(path, paint)
+
+                  path.reset(); path.moveTo(ax, ay); path.quadTo(mx, my, kx, ky)
+                  paint.color = Color.parseColor("#141722"); paint.strokeWidth = 4.6f; canvas.drawPath(path, paint)
+
+                  val steps = max(8, (hypot(kx - ax, ky - ay) / 7f).toInt())
+                  paint.color = Color.argb(56, 255, 255, 255); paint.strokeWidth = 1.3f
+                  for (i in 1 until steps) {
+                      val t = i.toFloat() / steps; val inv = 1f - t
+                      val px = inv * inv * ax + 2f * inv * t * mx + t * t * kx
+                      val py = inv * inv * ay + 2f * inv * t * my + t * t * ky
+                      canvas.drawLine(px - 1.6f, py - 1.5f, px + 1.6f, py + 1.5f, paint)
+                  }
+
+                  canvas.save(); canvas.translate(kx, ky); canvas.rotate((-ropeAngle * 180f) / PI.toFloat())
+                  paint.style = Paint.Style.FILL; paint.shader = goldGradient
+                  rectF.set(-4.8f, -5f, 4.8f, -0.5f); canvas.drawRoundRect(rectF, 2f, 2f, paint); paint.shader = null
+                  paint.color = Color.parseColor("#BE123C"); canvas.drawCircle(-4.2f, 2.5f, 4f, paint); canvas.drawCircle(4.2f, 2.5f, 4f, paint)
+                  paint.color = Color.parseColor("#E11D48"); rectF.set(-4.5f, -1f, 4.5f, 6.5f); canvas.drawRoundRect(rectF, 3.2f, 3.2f, paint)
+                  paint.shader = goldGradient; rectF.set(-3.8f, 6.2f, 3.8f, 9.2f); canvas.drawRoundRect(rectF, 1.5f, 1.5f, paint); paint.shader = null
+
+                  canvas.save(); canvas.translate(0f, 8.5f); canvas.rotate((tasselAngle * 0.7f * 180f) / PI.toFloat())
+                  paint.style = Paint.Style.STROKE; paint.strokeWidth = 1.5f
+                  val colors = intArrayOf(Color.parseColor("#9F1239"), Color.parseColor("#E11D48"), Color.parseColor("#FB7185"), Color.parseColor("#E11D48"), Color.parseColor("#9F1239"))
+                  for (s in -2..2) {
+                      val spread = s * 1.9f; val wave = sin(simTime * 4.5f + s) * 1.4f
+                      paint.color = colors[s + 2]
+                      path.reset(); path.moveTo(s * 0.8f, 0f); path.quadTo(spread * 0.7f + wave * 0.5f, 11f, spread + wave, 21f); canvas.drawPath(path, paint)
+                  }
+                  canvas.restore(); canvas.restore()
+              }
+
+              private fun drawCharacterPose(canvas: Canvas, char: CharType, charX: Float, charY: Float, currentRopeLen: Float) {
+                  val breathe = sin(simTime * 2.8f) * 1.5f
+                  val climbCycle = sin(slidePos * 28f)
+                  val activeTilt = if (fallAnimationEnabled) phoneTiltDeg else phoneTiltDeg * 0.25f
+                  val lookSway = if (currentTrick == IdleTrick.LOOK_AROUND) sin(trickPhase * 4f) * 6f else 0f
+                  val balanceLean = (activeTilt / 20f).coerceIn(-1f, 1f) * 6.5f + lookSway * 0.4f
+                  val squash = landingSquash
+                  val climbArmOffset = if (state == State.CLIMB_UP) climbCycle * 9f else 0f
+                  val climbLegOffset = if (state == State.CLIMB_UP) -climbCycle * 8f else 0f
+                  val slideTuck = if (state == State.SLIDE_DOWN) -5f else 0f
+
+                  val tiltDir = if (phoneTiltDeg >= 0f) 1f else -1f
+                  val hipSway = sin(legSwingAngle) * 14f
+                  val kneeLag = sin(legSwingAngle - 0.35f) * 18f
+                  val footLag = sin(legSwingAngle - 0.7f) * 24f
+                  val scrambleKick = sin(simTime * 8.0f) * 4.5f
+                  val handGrabEffort = sin(simTime * 5.0f) * 3.5f
+
+                  val b = slipBlend
+                  fun lerp(a: Float, c: Float) = a + (c - a) * b
+
+                  val hipX = lerp(-15f + balanceLean * 0.65f, hipSway)
+                  val hipY = lerp(-20f + squash * 0.85f + breathe * 0.5f, 27f)
+                  val shoulderX = lerp(-12f + balanceLean, hipSway * 0.45f)
+                  val shoulderY = lerp(-47f + squash * 0.55f + breathe, -1f)
+                  val headX = lerp(-9f + balanceLean * 1.1f, hipSway * 0.3f + tiltDir * 2f)
+                  val headY = lerp(-61f + squash * 0.55f + breathe, -15f)
+                  val headTilt = lerp(0.08f + balanceLean * 0.018f + (if (currentTrick == IdleTrick.SLEEP_ZZZ) 0.22f else 0f), -0.16f * tiltDir)
+
+                  val rElbowX = lerp(-4f, 3f * tiltDir + hipSway * 0.2f)
+                  val rElbowY = lerp(-44f + squash * 0.3f, -13f)
+                  val rHandX = 0f
+                  val rHandY = lerp(-52f - climbArmOffset, -25f)
+
+                  // Waving hand animation when IdleTrick.WAVE is active
+                  val isWaving = state == State.PERCHED && currentTrick == IdleTrick.WAVE
+                  val waveSwing = if (isWaving) sin(simTime * 14f) * 9f else 0f
+                  val lElbowX = lerp(if (isWaving) -28f else if (state == State.PERCHED) -24f + balanceLean * 0.5f else -6f, -9f + hipSway * 0.3f)
+                  val lElbowY = lerp(if (isWaving) -50f else if (state == State.PERCHED) -33f + squash * 0.6f + breathe else -36f, -5f + handGrabEffort * 0.5f)
+                  val lHandX = lerp(if (isWaving) -30f + waveSwing else if (state == State.PERCHED) -20f else 0f, -2f + handGrabEffort * 0.4f)
+                  val lHandY = lerp(if (isWaving) -66f else if (state == State.PERCHED) -18f + squash * 0.5f else -36f + climbArmOffset, -17f + handGrabEffort)
+
+                  val rKneeX = lerp(-5f, kneeLag + 3f)
+                  val rKneeY = lerp(-10f + squash * 0.4f, 43f - abs(kneeLag) * 0.15f)
+                  val rFootX = lerp(0f, footLag + 2f + scrambleKick)
+                  val rFootY = lerp(2f + climbLegOffset, 59f - abs(footLag) * 0.2f + scrambleKick * 0.5f)
+
+                  val lKneeX = lerp(-23f, kneeLag - 5f)
+                  val lKneeY = lerp(-15f + squash * 0.5f + slideTuck, 40f - abs(kneeLag) * 0.15f)
+                  val lFootX = lerp(-1f + sin(simTime * 3.2f) * 2.5f, footLag - 6f - scrambleKick)
+                  val lFootY = lerp(-6f + slideTuck - climbLegOffset + cos(simTime * 3.2f) * 2f, 55f - abs(footLag) * 0.2f - scrambleKick * 0.5f)
+
+                  val holeScale = min(1.12f, slidePos * 4.5f)
+                  val rotAngle = -ropeAngle * (1f - b * 0.5f)
+                  val limbColor = when (char) {
+                      CharType.BOT -> Color.parseColor("#CBD5E1")
+                      CharType.FOX -> Color.parseColor("#9A3412")
+                      else -> Color.parseColor("#090B10")
+                  }
+
+                  if (char == CharType.NINJA && holeScale > 0.35f) {
+                      val cosR = cos(rotAngle); val sinR = sin(rotAngle)
+                      val lx = headX - 11f; val ly = headY - 2f
+                      drawFlowingHeadband(canvas, charX + (lx * cosR - ly * sinR) * holeScale, charY + (lx * sinR + ly * cosR) * holeScale, ropeAngVel * currentRopeLen)
+                  }
+
+                  canvas.save()
+                  canvas.translate(charX, charY)
+                  canvas.scale(holeScale, holeScale)
+                  canvas.rotate(((rotAngle * 180f) / PI.toFloat()) + flipAngleDeg, 0f, -30f)
+
+                  drawSculptedLimb(canvas, shoulderX, shoulderY, rElbowX, rElbowY, rHandX, rHandY, 7.5f, 6.2f, 4.5f, limbColor)
+                  paint.style = Paint.Style.FILL; paint.color = limbColor; canvas.drawCircle(rHandX, rHandY, 4.2f, paint)
+
+                  drawSculptedLimb(canvas, hipX, hipY, rKneeX, rKneeY, rFootX, rFootY, 10.5f, 7.8f, 5.0f, limbColor)
+                  drawNinjaFoot(canvas, rFootX, rFootY, rFootX + 8f, rFootY + 1f, limbColor)
+
+                  drawCharacterTorso(canvas, char, hipX, hipY, shoulderX, shoulderY)
+
+                  drawSculptedLimb(canvas, hipX, hipY, lKneeX, lKneeY, lFootX, lFootY, 11.0f, 8.2f, 5.2f, limbColor)
+                  drawNinjaFoot(canvas, lFootX, lFootY, lFootX + 8f, lFootY - 1f, limbColor)
+
+                  drawCharacterHead(canvas, char, headX, headY, headTilt, b > 0.45f)
+
+                  drawSculptedLimb(canvas, shoulderX, shoulderY, lElbowX, lElbowY, lHandX, lHandY, 8.0f, 6.5f, 4.6f, limbColor)
+                  paint.color = limbColor; canvas.drawCircle(lHandX, lHandY, 4.0f, paint)
+                  canvas.restore()
+              }
+
+              private fun drawSculptedLimb(canvas: Canvas, x1: Float, y1: Float, x2: Float, y2: Float, x3: Float, y3: Float, wStart: Float, wMid: Float, wEnd: Float, color: Int) {
+                  paint.style = Paint.Style.FILL; paint.color = color
+                  drawTaperedSegment(canvas, x1, y1, x2, y2, wStart, wMid)
+                  canvas.drawCircle(x2, y2, wMid * 0.5f, paint)
+                  drawTaperedSegment(canvas, x2, y2, x3, y3, wMid * 1.04f, wEnd)
+              }
+
+              private fun drawTaperedSegment(canvas: Canvas, x1: Float, y1: Float, x2: Float, y2: Float, w1: Float, w2: Float) {
+                  val dx = x2 - x1; val dy = y2 - y1; val len = hypot(dx, dy).coerceAtLeast(1f)
+                  val nx = -dy / len; val ny = dx / len
+                  val mx = (x1 + x2) * 0.5f + nx * (w1 - w2) * 0.12f; val my = (y1 + y2) * 0.5f + ny * (w1 - w2) * 0.12f
+                  val mw = (w1 + w2) * 0.54f
+                  path.reset()
+                  path.moveTo(x1 + nx * w1 * 0.5f, y1 + ny * w1 * 0.5f)
+                  path.quadTo(mx + nx * mw * 0.5f, my + ny * mw * 0.5f, x2 + nx * w2 * 0.5f, y2 + ny * w2 * 0.5f)
+                  path.lineTo(x2 - nx * w2 * 0.5f, y2 - ny * w2 * 0.5f)
+                  path.quadTo(mx - nx * mw * 0.5f, my - ny * mw * 0.5f, x1 - nx * w1 * 0.5f, y1 - ny * w1 * 0.5f)
+                  path.close(); canvas.drawPath(path, paint)
+              }
+
+              private fun drawNinjaFoot(canvas: Canvas, ax: Float, ay: Float, tx: Float, ty: Float, color: Int) {
+                  paint.style = Paint.Style.FILL; paint.color = color
+                  path.reset(); path.moveTo(ax - 3.5f, ay); path.lineTo(ax + 3.5f, ay - 2f)
+                  path.quadTo((ax + tx) * 0.5f + 2f, (ay + ty) * 0.5f - 3f, tx, ty)
+                  path.quadTo((ax + tx) * 0.5f, ty + 3.5f, ax - 4f, ay + 3.5f); path.close(); canvas.drawPath(path, paint)
+              }
+
+              private fun drawCharacterTorso(canvas: Canvas, char: CharType, hipX: Float, hipY: Float, shoulderX: Float, shoulderY: Float) {
+                  val dx = shoulderX - hipX; val dy = shoulderY - hipY
+                  val angleRad = atan2(dy, dx) + (PI.toFloat() / 2f); val tLen = hypot(dx, dy)
+                  canvas.save(); canvas.translate(hipX, hipY); canvas.rotate((angleRad * 180f) / PI.toFloat())
+
+                  when (char) {
+                      CharType.NINJA -> {
+                          canvas.save(); canvas.translate(-4f, -tLen * 0.65f); canvas.rotate((-0.48f * 180f) / PI.toFloat())
+                          paint.style = Paint.Style.FILL; paint.color = Color.parseColor("#141722"); canvas.drawRect(-2.2f, -22f, 2.2f, 12f, paint)
+                          paint.color = Color.parseColor("#FBBF24"); canvas.drawRect(-4.5f, -10f, 4.5f, -7.8f, paint)
+                          paint.color = Color.parseColor("#E11D48"); canvas.drawRect(-1.2f, -19f, 1.2f, -16.6f, paint); canvas.drawRect(-1.2f, -15f, 1.2f, -12.6f, paint)
+                          canvas.restore()
+                      }
+                      CharType.CAT -> {
+                          val tailWave = sin(simTime * 4.2f) * 10f
+                          paint.style = Paint.Style.STROKE; paint.strokeWidth = 5.2f; paint.strokeCap = Paint.Cap.ROUND
+                          paint.color = Color.parseColor("#11131C"); path.reset(); path.moveTo(-4f, -2f)
+                          path.cubicTo(-22f, -4f + tailWave * 0.5f, -28f, -22f + tailWave, -16f, -28f + tailWave); canvas.drawPath(path, paint)
+                      }
+                      CharType.FOX -> {
+                          val tailSway = sin(simTime * 3.5f) * 8f
+                          canvas.save(); canvas.translate(-5f, -3f); canvas.rotate(((-0.35f + tailSway * 0.025f) * 180f) / PI.toFloat())
+                          paint.style = Paint.Style.FILL; paint.color = Color.parseColor("#EA580C"); path.reset(); path.moveTo(0f, 0f)
+                          path.quadTo(-18f, -14f, -26f, -4f); path.quadTo(-34f, 4f, -20f, 11f); path.quadTo(-8f, 9f, 0f, 0f); path.close(); canvas.drawPath(path, paint)
+                          paint.color = Color.parseColor("#FFFBEB"); canvas.drawCircle(-24f, 2f, 6.5f, paint); canvas.restore()
+                      }
+                      CharType.BOT -> {}
+                  }
+
+                  paint.style = Paint.Style.FILL
+                  paint.color = when (char) { CharType.BOT -> Color.parseColor("#F8FAFC"); CharType.FOX -> Color.parseColor("#C2410C"); else -> Color.parseColor("#090B10") }
+                  path.reset(); path.moveTo(-6.5f, 2f); path.quadTo(-8.5f, -tLen * 0.5f, -9.5f, -tLen + 2f)
+                  path.quadTo(0f, -tLen - 4f, 8.5f, -tLen + 2f); path.quadTo(7.5f, -tLen * 0.45f, 5.5f, 2f); path.quadTo(0f, 6f, -6.5f, 2f); path.close(); canvas.drawPath(path, paint)
+
+                  when (char) {
+                      CharType.BOT -> { paint.color = Color.parseColor("#06B6D4"); canvas.drawCircle(1.5f, -tLen * 0.52f, 3.2f, paint) }
+                      CharType.CAT -> {
+                          paint.color = Color.parseColor("#E11D48"); canvas.drawRect(-7f, -tLen + 1f, 7f, -tLen + 4.5f, paint)
+                          paint.color = Color.parseColor("#FACC15"); canvas.drawCircle(2.5f, -tLen + 3.5f, 3.4f, paint)
+                      }
+                      else -> {
+                          paint.color = if (char == CharType.FOX) Color.parseColor("#FBBF24") else Color.parseColor("#E11D48")
+                          rectF.set(-6.8f, -4f, 6.2f, 0.2f); canvas.drawRoundRect(rectF, 2f, 2f, paint)
+                      }
+                  }
+                  canvas.restore()
+              }
+
+              private fun drawCharacterHead(canvas: Canvas, char: CharType, hx: Float, hy: Float, headTilt: Float, isSlipping: Boolean) {
+                  canvas.save(); canvas.translate(hx, hy); canvas.rotate((headTilt * 180f) / PI.toFloat())
+                  val lookOffset = if (currentTrick == IdleTrick.LOOK_AROUND) sin(trickPhase * 4f) * 3.2f else gazeX * 0.6f
+                  val ex = 2.8f + lookOffset; val ey = 2.0f
+                  val eyeOpen = if (currentTrick == IdleTrick.SLEEP_ZZZ) 0.1f else (1.0f - blinkAmount).coerceAtLeast(0.08f)
+                  paint.style = Paint.Style.FILL
+
+                  when (char) {
+                      CharType.NINJA -> {
+                          paint.color = Color.parseColor("#090B10"); canvas.drawRect(-3.8f, 8f, 3.8f, 16f, paint); canvas.drawCircle(0f, 0f, 12.8f, paint)
+                          path.reset(); path.moveTo(-10f, -7f); path.lineTo(-15f, -11f); path.lineTo(-7f, -11f); path.lineTo(-11f, -15f); path.lineTo(-2f, -12.5f); path.close(); canvas.drawPath(path, paint)
+                          paint.color = Color.parseColor("#E11D48"); path.reset(); path.moveTo(-12.6f, -4.5f); path.quadTo(1f, -6.5f, 12.6f, -3.5f); path.lineTo(12.8f, 1.2f); path.quadTo(1f, -1.5f, -12.8f, 0.5f); path.close(); canvas.drawPath(path, paint)
+                          paint.color = Color.WHITE
+                          if (isSlipping) {
+                              rectF.set(ex - 6.1f, ey - 3f * eyeOpen, ex - 1.5f, ey + 3f * eyeOpen); canvas.drawOval(rectF, paint)
+                              rectF.set(ex + 1.5f, ey - 3f * eyeOpen, ex + 6.1f, ey + 3f * eyeOpen); canvas.drawOval(rectF, paint)
+                          } else {
+                              drawSlantedEye(canvas, ex - 3.8f, ey, 4.6f, 2.7f * eyeOpen, 0.16f)
+                              drawSlantedEye(canvas, ex + 3.8f, ey, 4.4f, 2.7f * eyeOpen, -0.12f)
+                          }
+                      }
+                      CharType.CAT -> {
+                          val earTwitch = sin(simTime * 6.5f) * 1.3f
+                          paint.color = Color.parseColor("#090B10")
+                          path.reset(); path.moveTo(-11f, -5f); path.lineTo(-13f, -19f + earTwitch); path.lineTo(-2f, -11f); path.close(); canvas.drawPath(path, paint)
+                          path.reset(); path.moveTo(2f, -11f); path.lineTo(12f, -19f - earTwitch); path.lineTo(11f, -5f); path.close(); canvas.drawPath(path, paint)
+                          paint.color = Color.parseColor("#FB7185")
+                          path.reset(); path.moveTo(-9.5f, -7f); path.lineTo(-11f, -15f + earTwitch); path.lineTo(-4f, -10f); path.close(); canvas.drawPath(path, paint)
+                          path.reset(); path.moveTo(4f, -10f); path.lineTo(10f, -15f - earTwitch); path.lineTo(9.5f, -7f); path.close(); canvas.drawPath(path, paint)
+                          paint.color = Color.parseColor("#090B10"); rectF.set(-13.5f, -12.2f, 13.5f, 12.2f); canvas.drawOval(rectF, paint)
+                          paint.color = Color.parseColor("#FDE047")
+                          rectF.set(ex - 7.4f, ey - 3.6f * eyeOpen, ex - 1.0f, ey + 3.6f * eyeOpen); canvas.drawOval(rectF, paint)
+                          rectF.set(ex + 1.0f, ey - 3.6f * eyeOpen, ex + 7.4f, ey + 3.6f * eyeOpen); canvas.drawOval(rectF, paint)
+                      }
+                      CharType.BOT -> {
+                          val antBob = sin(simTime * 7f) * 2.0f
+                          paint.style = Paint.Style.STROKE; paint.strokeWidth = 2f; paint.color = Color.parseColor("#94A3B8"); canvas.drawLine(0f, -12f, antBob, -19f, paint)
+                          paint.style = Paint.Style.FILL; paint.color = Color.parseColor("#06B6D4"); canvas.drawCircle(antBob, -20f, 2.8f, paint)
+                          paint.color = Color.parseColor("#F8FAFC"); rectF.set(-13.5f, -12f, 13.5f, 11f); canvas.drawRoundRect(rectF, 11f, 11f, paint)
+                          paint.color = Color.parseColor("#0F172A"); rectF.set(-10.5f, -7.5f, 11.5f, 7f); canvas.drawRoundRect(rectF, 7f, 7f, paint)
+                          paint.color = Color.parseColor("#22D3EE")
+                          rectF.set(ex - 6.4f, ey - 0.5f - 3f * eyeOpen, ex - 1.6f, ey - 0.5f + 3f * eyeOpen); canvas.drawOval(rectF, paint)
+                          rectF.set(ex + 1.6f, ey - 0.5f - 3f * eyeOpen, ex + 6.4f, ey - 0.5f + 3f * eyeOpen); canvas.drawOval(rectF, paint)
+                      }
+                      CharType.FOX -> {
+                          paint.color = Color.parseColor("#EA580C")
+                          path.reset(); path.moveTo(-11f, -5f); path.lineTo(-15f, -21f); path.lineTo(-2f, -11f); path.close(); canvas.drawPath(path, paint)
+                          path.reset(); path.moveTo(2f, -11f); path.lineTo(14f, -21f); path.lineTo(11f, -5f); path.close(); canvas.drawPath(path, paint)
+                          paint.color = Color.parseColor("#FFFBEB")
+                          path.reset(); path.moveTo(-9f, -7f); path.lineTo(-12.5f, -17f); path.lineTo(-4f, -10f); path.close(); canvas.drawPath(path, paint)
+                          path.reset(); path.moveTo(4f, -10f); path.lineTo(11.5f, -17f); path.lineTo(9f, -7f); path.close(); canvas.drawPath(path, paint)
+                          paint.color = Color.parseColor("#EA580C"); canvas.drawCircle(0f, 0f, 12.8f, paint)
+                          paint.color = Color.parseColor("#FFFBEB"); rectF.set(-12.5f, -0.7f, 0.5f, 9.7f); canvas.drawOval(rectF, paint); rectF.set(-0.5f, -0.7f, 12.5f, 9.7f); canvas.drawOval(rectF, paint)
+                          paint.color = Color.parseColor("#FEF08A")
+                          drawSlantedEye(canvas, ex - 3.8f, ey - 0.5f, 4.5f, 2.8f * eyeOpen, 0.15f)
+                          drawSlantedEye(canvas, ex + 3.8f, ey - 0.5f, 4.5f, 2.8f * eyeOpen, -0.15f)
+                      }
+                  }
+                  canvas.restore()
+              }
+
+              private fun drawSlantedEye(canvas: Canvas, x: Float, y: Float, w: Float, h: Float, slant: Float) {
+                  canvas.save(); canvas.translate(x, y); canvas.rotate((slant * 180f) / PI.toFloat())
+                  path.reset(); path.moveTo(-w * 0.5f, 0f); path.quadTo(0f, -h, w * 0.5f, -h * 0.2f); path.quadTo(0f, h * 0.85f, -w * 0.5f, 0f); path.close()
+                  canvas.drawPath(path, paint); canvas.restore()
+              }
+
+              private fun drawFlowingHeadband(canvas: Canvas, knotX: Float, knotY: Float, charVelX: Float) {
+                  ribbonNodes[0].set(knotX, knotY)
+                  val windX = -5.2f - charVelX * 0.8f
+                  val slideUpdraft = when (state) { State.SLIDE_DOWN -> -3.8f; State.CLIMB_UP -> 3.2f; else -> 0.6f }
+                  for (i in 1 until ribbonNodes.size) {
+                      val prev = ribbonNodes[i - 1]; val curr = ribbonNodes[i]
+                      val wave = sin(simTime * 7.2f - i * 0.85f) * (1.4f + i * 0.4f)
+                      curr.x += (prev.x + windX - curr.x) * 0.45f; curr.y += (prev.y + slideUpdraft + wave - curr.y) * 0.45f
+                  }
+                  drawTaperingRibbon(canvas, 5.5f, 0.8f, 2.2f, Color.parseColor("#9F1239"))
+                  drawTaperingRibbon(canvas, 7.0f, -0.6f, -1.5f, Color.parseColor("#E11D48"))
+                  paint.style = Paint.Style.FILL; paint.color = Color.parseColor("#BE123C"); canvas.drawCircle(knotX, knotY, 4.4f, paint)
+              }
+
+              private fun drawTaperingRibbon(canvas: Canvas, startWidth: Float, yOffsetStart: Float, yOffsetSpread: Float, color: Int) {
+                  paint.style = Paint.Style.FILL; paint.color = color; path.reset()
+                  val n = ribbonNodes.size
+                  for (i in 0 until n) {
+                      val t = i.toFloat() / (n - 1); val halfW = startWidth * (1f - t * 0.88f) * 0.5f
+                      val px = ribbonNodes[i].x; val py = ribbonNodes[i].y + yOffsetStart + i * yOffsetSpread - halfW
+                      if (i == 0) path.moveTo(px, py) else path.lineTo(px, py)
+                  }
+                  for (i in n - 1 downTo 0) {
+                      val t = i.toFloat() / (n - 1); val halfW = startWidth * (1f - t * 0.88f) * 0.5f
+                      val px = ribbonNodes[i].x; val py = ribbonNodes[i].y + yOffsetStart + i * yOffsetSpread + halfW
+                      path.lineTo(px, py)
+                  }
+                  path.close(); canvas.drawPath(path, paint)
+              }
+
+              private fun drawSpeechBubbleBelowCharacter(canvas: Canvas, char: CharType, charXPx: Float, topYPx: Float) {
+                  val wisdom = currentWisdom ?: return
+                  val bodyLayout = cachedBodyLayout ?: return
+                  val elapsed = SystemClock.elapsedRealtime() - bubbleStartMs
+                  if (elapsed >= bubbleDurationMs) { currentWisdom = null; return }
+
+                  val progress = (1f - elapsed.toFloat() / bubbleDurationMs).coerceIn(0f, 1f)
+                  val padH = 16f * density; val padV = 14f * density; val headerH = 22f * density
+                  val titleH = (cachedTitleLayout?.height?.toFloat() ?: 0f) + if (cachedTitleLayout != null) 6f * density else 0f
+                  val footerH = 20f * density
+
+                  val boxW = bodyLayout.width + padH * 2f
+                  val boxH = padV * 2f + headerH + titleH + bodyLayout.height + footerH
+                  val leftX = (charXPx - boxW / 2f).coerceIn(10f * density, (width - boxW - 10f * density).coerceAtLeast(10f * density))
+                  val topY = topYPx.coerceAtLeast(95f * density)
+                  val bottomY = topY + boxH
+
+                  val pointerX = charXPx.coerceIn(leftX + 24f * density, leftX + boxW - 24f * density)
+                  paint.style = Paint.Style.FILL; paint.color = Color.parseColor("#F20F172A")
+                  path.reset(); path.moveTo(pointerX - 10f * density, topY + 1f); path.lineTo(pointerX, topY - 10f * density); path.lineTo(pointerX + 10f * density, topY + 1f); path.close(); canvas.drawPath(path, paint)
+
+                  paint.color = Color.argb(110, 0, 0, 0)
+                  rectF.set(leftX, topY + 5f * density, leftX + boxW, bottomY + 5f * density); canvas.drawRoundRect(rectF, 18f * density, 18f * density, paint)
+
+                  paint.color = Color.parseColor("#F20F172A")
+                  rectF.set(leftX, topY, leftX + boxW, bottomY); canvas.drawRoundRect(rectF, 18f * density, 18f * density, paint)
+
+                  paint.style = Paint.Style.STROKE; paint.strokeWidth = 1.5f * density; paint.color = char.accentColor
+                  canvas.drawRoundRect(rectF, 18f * density, 18f * density, paint)
+
+                  paint.style = Paint.Style.FILL; headerPaint.color = char.accentColor
+                  canvas.drawText(char.displayName, leftX + padH, topY + padV + 11f * density, headerPaint)
+
+                  headerPaint.color = Color.parseColor("#CBD5E1")
+                  val catW = headerPaint.measureText(wisdom.categoryBadge)
+                  canvas.drawText(wisdom.categoryBadge, leftX + boxW - padH - catW, topY + padV + 11f * density, headerPaint)
+
+                  var cursorY = topY + padV + headerH
+                  cachedTitleLayout?.let { tLayout ->
+                      canvas.save(); canvas.translate(leftX + padH, cursorY); titlePaint.color = char.accentColor; tLayout.draw(canvas); canvas.restore()
+                      cursorY += tLayout.height + 6f * density
+                  }
+                  canvas.save(); canvas.translate(leftX + padH, cursorY); bodyLayout.draw(canvas); canvas.restore()
+
+                  canvas.drawText("Tap friend: Trick & Next 💡  •  Double-tap: Hide", leftX + padH, bottomY - 10f * density, hintPaint)
+                  paint.color = char.accentColor
+                  rectF.set(leftX + padH, bottomY - 4.5f * density, leftX + padH + (boxW - padH * 2f) * progress, bottomY - 1.5f * density)
+                  canvas.drawRoundRect(rectF, 2f * density, 2f * density, paint)
+              }
+
+              override fun onTouchEvent(event: MotionEvent): Boolean {
+                  if (isSystemOverlay) return false
+                  return gestureDetector.onTouchEvent(event) || super.onTouchEvent(event)
+              }
+          }
+          EOF
+
+          cat << 'EOF' > app/src/main/java/com/companion/punchhole/OverlayService.kt
+          package com.companion.punchhole
+
+          import android.app.*
+          import android.content.*
+          import android.content.pm.ServiceInfo
+          import android.content.res.Configuration
+          import android.graphics.Color
+          import android.graphics.PixelFormat
+          import android.hardware.*
+          import android.os.Build
+          import android.os.IBinder
+          import android.view.*
+          import kotlin.math.abs
+          import kotlin.math.roundToInt
+
+          class OverlayService : Service(), SensorEventListener, SharedPreferences.OnSharedPreferenceChangeListener {
+
+              companion object {
+                  var isRunning = false
+                  const val PREFS_NAME = "PunchHoleNativePrefs"
+              }
+
+              private lateinit var windowManager: WindowManager
+              private lateinit var prefs: SharedPreferences
+              private var companionView: CompanionOverlayView? = null
+              private var punchHoleTouchView: View? = null
+              private var characterTouchView: View? = null
+              private lateinit var punchHoleParams: WindowManager.LayoutParams
+              private lateinit var charTouchParams: WindowManager.LayoutParams
+              private var sensorManager: SensorManager? = null
+
+              private var isScreenOn = true
+              private var isCompanionOut = true
+              private var isPortrait = true
+              private var sensorRegistered = false
+
+              private val screenReceiver = object : BroadcastReceiver() {
+                  override fun onReceive(context: Context?, intent: Intent?) {
+                      when (intent?.action) {
+                          Intent.ACTION_SCREEN_OFF -> { isScreenOn = false; updateSensorRegistration() }
+                          Intent.ACTION_SCREEN_ON -> { isScreenOn = true; updateSensorRegistration(); companionView?.startLoop() }
+                      }
+                  }
+              }
+
+              override fun onCreate() {
+                  super.onCreate()
+                  isRunning = true
+                  prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+                  prefs.edit().putBoolean("overlay_running", true).apply()
+                  prefs.registerOnSharedPreferenceChangeListener(this)
+                  startOverlayForeground()
+
+                  registerReceiver(screenReceiver, IntentFilter().apply { addAction(Intent.ACTION_SCREEN_OFF); addAction(Intent.ACTION_SCREEN_ON) })
+                  windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+                  sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
+                  isPortrait = resources.configuration.orientation != Configuration.ORIENTATION_LANDSCAPE
+
+                  val dm = resources.displayMetrics; val density = dm.density
+                  val layoutType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY else @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE
+
+                  val visualParams = WindowManager.LayoutParams(
+                      minOf(dm.widthPixels, (360 * density).toInt()), (620 * density).toInt(), layoutType,
+                      WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                      PixelFormat.TRANSLUCENT
+                  ).apply { gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL; applyCutoutFlag(this) }
+
+                  charTouchParams = WindowManager.LayoutParams(
+                      (92 * density).toInt(), (105 * density).toInt(), layoutType,
+                      WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                      PixelFormat.TRANSLUCENT
+                  ).apply { gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL; x = 0; y = (110 * density).toInt(); applyCutoutFlag(this) }
+
+                  punchHoleParams = WindowManager.LayoutParams(
+                      (64 * density).toInt(), (48 * density).toInt(), layoutType,
+                      WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                      PixelFormat.TRANSLUCENT
+                  ).apply {
+                      gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+                      x = (prefs.getInt("cam_x", 0) * density).roundToInt()
+                      y = (prefs.getInt("cam_y", 6) * density).roundToInt()
+                      applyCutoutFlag(this)
+                  }
+
+                  companionView = CompanionOverlayView(
+                      this, isSystemOverlay = true,
+                      onStateChanged = { out ->
+                          isCompanionOut = out
+                          updateSensorRegistration()
+                          characterTouchView?.post { characterTouchView?.visibility = if (out && isPortrait) View.VISIBLE else View.GONE }
+                      },
+                      onCharacterBoundsUpdated = { offsetXDp, topYDp, active ->
+                          characterTouchView?.let { v ->
+                              val targetVis = if (active && isPortrait) View.VISIBLE else View.GONE
+                              if (v.visibility != targetVis) v.visibility = targetVis
+                              if (active && isPortrait) {
+                                  val newX = (offsetXDp * density).roundToInt()
+                                  val newY = (topYDp * density).roundToInt().coerceAtLeast((48 * density).toInt())
+                                  if (abs(charTouchParams.x - newX) > 6 || abs(charTouchParams.y - newY) > 6) {
+                                      charTouchParams.x = newX; charTouchParams.y = newY
+                                      try { windowManager.updateViewLayout(v, charTouchParams) } catch (_: Exception) {}
+                                  }
+                              }
+                          }
+                      }
+                  ).also { view -> syncPreferencesToView(view); windowManager.addView(view, visualParams) }
+
+                  val charGesture = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+                      override fun onDown(e: MotionEvent): Boolean = true
+                      override fun onSingleTapConfirmed(e: MotionEvent): Boolean { companionView?.onCharacterSingleTap(); return true }
+                      override fun onDoubleTap(e: MotionEvent): Boolean { companionView?.retractCompanion(); return true }
+                      override fun onScroll(e1: MotionEvent?, e2: MotionEvent, dx: Float, dy: Float): Boolean { companionView?.applyHorizontalImpulse(-dx); return true }
+                  })
+                  characterTouchView = View(this).apply {
+                      setBackgroundColor(Color.TRANSPARENT)
+                      setOnTouchListener { _, event -> charGesture.onTouchEvent(event) }
+                  }.also { windowManager.addView(it, charTouchParams) }
+
+                  val holeGesture = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+                      override fun onDown(e: MotionEvent): Boolean = true
+                      override fun onSingleTapUp(e: MotionEvent): Boolean { companionView?.toggleCompanion(); return true }
+                  })
+                  punchHoleTouchView = View(this).apply {
+                      setBackgroundColor(Color.TRANSPARENT)
+                      setOnTouchListener { _, event -> holeGesture.onTouchEvent(event) }
+                  }.also { windowManager.addView(it, punchHoleParams) }
+
+                  updateSensorRegistration()
+              }
+
+              private fun applyCutoutFlag(lp: WindowManager.LayoutParams) {
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                      lp.layoutInDisplayCutoutMode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS else WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+                  }
+              }
+
+              private fun syncPreferencesToView(view: CompanionOverlayView) {
+                  val density = resources.displayMetrics.density
+                  view.charMode = prefs.getString("char_mode", "rotate") ?: "rotate"
+                  if (view.charMode != "rotate") view.activeCharIdx = view.charMode.toIntOrNull() ?: 0
+                  view.visitIntervalSec = prefs.getInt("visit_sec", 120)
+                  view.camTopOffsetDp = prefs.getInt("cam_y", 6).toFloat()
+                  view.camLeftOffsetDp = prefs.getInt("cam_x", 0).toFloat()
+                  view.bubbleDisplaySec = prefs.getInt("read_sec", 9)
+                  view.textSizeSp = prefs.getInt("text_sp", 16)
+                  view.targetRopeRatio = prefs.getInt("rope_pct", 28) / 100f
+                  view.fallAnimationEnabled = prefs.getBoolean("fall_on", true)
+                  view.quotesEnabled = prefs.getBoolean("quotes_on", true)
+                  view.rebuildBubbleLayouts()
+                  view.startLoop()
+                  view.invalidate()
+
+                  punchHoleTouchView?.let { hv ->
+                      punchHoleParams.x = (view.camLeftOffsetDp * density).roundToInt()
+                      punchHoleParams.y = (view.camTopOffsetDp * density).roundToInt()
+                      try { windowManager.updateViewLayout(hv, punchHoleParams) } catch (_: Exception) {}
+                  }
+              }
+
+              override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) { companionView?.let { syncPreferencesToView(it) } }
+
+              private fun updateSensorRegistration() {
+                  val sm = sensorManager ?: return
+                  val shouldListen = isScreenOn && isCompanionOut && isPortrait
+                  if (shouldListen && !sensorRegistered) {
+                      sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)?.let { sm.registerListener(this, it, SensorManager.SENSOR_DELAY_UI); sensorRegistered = true }
+                  } else if (!shouldListen && sensorRegistered) {
+                      sm.unregisterListener(this); sensorRegistered = false
+                  }
+              }
+
+              override fun onConfigurationChanged(newConfig: Configuration) {
+                  super.onConfigurationChanged(newConfig)
+                  isPortrait = newConfig.orientation != Configuration.ORIENTATION_LANDSCAPE
+                  companionView?.apply { isLandscapePaused = !isPortrait; visibility = if (isPortrait) View.VISIBLE else View.GONE; if (isPortrait) startLoop() }
+                  punchHoleTouchView?.visibility = if (isPortrait) View.VISIBLE else View.GONE
+                  characterTouchView?.visibility = if (isPortrait && isCompanionOut) View.VISIBLE else View.GONE
+                  updateSensorRegistration()
+              }
+
+              override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+                  if (intent?.action == "STOP_OVERLAY") { prefs.edit().putBoolean("overlay_running", false).apply(); stopSelf(); return START_NOT_STICKY }
+                  return START_STICKY
+              }
+
+              private fun startOverlayForeground() {
+                  val channelId = "punch_hole_native_channel"
+                  val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                      nm.createNotificationChannel(NotificationChannel(channelId, "Punch Hole Companion Overlay", NotificationManager.IMPORTANCE_LOW))
+                  }
+                  val openPending = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
+                  val stopPending = PendingIntent.getService(this, 1, Intent(this, OverlayService::class.java).apply { action = "STOP_OVERLAY" }, PendingIntent.FLAG_IMMUTABLE)
+                  val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) Notification.Builder(this, channelId) else @Suppress("DEPRECATION") Notification.Builder(this)
+                  val notification = builder
+                      .setContentTitle("Punch Hole Companion Active")
+                      .setContentText("Tap camera hole to summon/hide • Tap friend for tricks")
+                      .setSmallIcon(android.R.drawable.ic_menu_compass)
+                      .setContentIntent(openPending)
+                      .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop Overlay", stopPending)
+                      .setOngoing(true)
+                      .build()
+                  if (Build.VERSION.SDK_INT >= 34) startForeground(101, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE) else startForeground(101, notification)
+              }
+
+              override fun onSensorChanged(event: SensorEvent?) {
+                  if (event?.sensor?.type == Sensor.TYPE_ACCELEROMETER && isCompanionOut && isPortrait) {
+                      companionView?.phoneTiltDeg = (-event.values[0] * 4.2f).coerceIn(-40f, 40f)
+                  }
+              }
+              override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+
+              override fun onDestroy() {
+                  isRunning = false
+                  prefs.unregisterOnSharedPreferenceChangeListener(this)
+                  try { unregisterReceiver(screenReceiver) } catch (_: Exception) {}
+                  if (sensorRegistered) { sensorManager?.unregisterListener(this); sensorRegistered = false }
+                  companionView?.let { try { windowManager.removeView(it) } catch (_: Exception) {} }
+                  characterTouchView?.let { try { windowManager.removeView(it) } catch (_: Exception) {} }
+                  punchHoleTouchView?.let { try { windowManager.removeView(it) } catch (_: Exception) {} }
+                  super.onDestroy()
+              }
+              override fun onBind(intent: Intent?): IBinder? = null
+          }
+          EOF
+
+          cat << 'EOF' > app/src/main/java/com/companion/punchhole/BootReceiver.kt
+          package com.companion.punchhole
+
+          import android.content.BroadcastReceiver
+          import android.content.Context
+          import android.content.Intent
+          import android.os.Build
+          import android.provider.Settings
+
+          class BootReceiver : BroadcastReceiver() {
+              override fun onReceive(context: Context, intent: Intent) {
+                  if (Intent.ACTION_BOOT_COMPLETED == intent.action) {
+                      val prefs = context.getSharedPreferences(OverlayService.PREFS_NAME, Context.MODE_PRIVATE)
+                      if (prefs.getBoolean("overlay_running", false) && Settings.canDrawOverlays(context)) {
+                          val svc = Intent(context, OverlayService::class.java)
+                          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) context.startForegroundService(svc) else context.startService(svc)
+                      }
+                  }
+              }
+          }
+          EOF
+
+          cat << 'EOF' > app/src/main/java/com/companion/punchhole/MainActivity.kt
+          package com.companion.punchhole
+
+          import android.app.Activity
+          import android.content.*
+          import android.graphics.Color
+          import android.graphics.Typeface
+          import android.graphics.drawable.GradientDrawable
+          import android.hardware.*
+          import android.net.Uri
+          import android.os.*
+          import android.provider.Settings
+          import android.util.TypedValue
+          import android.view.*
+          import android.widget.*
+
+          class MainActivity : Activity(), SensorEventListener {
+
+              private lateinit var prefs: SharedPreferences
+              private lateinit var previewView: CompanionOverlayView
+              private lateinit var overlayBtn: Button
+              private var sensorManager: SensorManager? = null
+              private var gyroActive = false
+
+              private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
+
+              private fun roundedBg(fillHex: String, strokeHex: String? = null, radiusDp: Float = 12f): GradientDrawable {
+                  return GradientDrawable().apply {
+                      color = android.content.res.ColorStateList.valueOf(Color.parseColor(fillHex))
+                      cornerRadius = radiusDp * resources.displayMetrics.density
+                      if (strokeHex != null) setStroke(dp(1), Color.parseColor(strokeHex))
+                  }
+              }
+
+              override fun onCreate(savedInstanceState: Bundle?) {
+                  super.onCreate(savedInstanceState)
+                  prefs = getSharedPreferences(OverlayService.PREFS_NAME, MODE_PRIVATE)
+                  sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                      window.attributes = window.attributes.apply {
+                          layoutInDisplayCutoutMode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS else WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+                      }
+                  }
+                  window.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
+                  window.statusBarColor = Color.TRANSPARENT
+
+                  val root = FrameLayout(this).apply {
+                      background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Color.parseColor("#3F46CC"), Color.parseColor("#6370F5"), Color.parseColor("#2A3182")))
+                  }
+
+                  previewView = CompanionOverlayView(this, isSystemOverlay = false).apply {
+                      charMode = prefs.getString("char_mode", "rotate") ?: "rotate"
+                      if (charMode != "rotate") activeCharIdx = charMode.toIntOrNull() ?: 0
+                      visitIntervalSec = prefs.getInt("visit_sec", 120)
+                      visitCountdown = visitIntervalSec
+                      camTopOffsetDp = prefs.getInt("cam_y", 6).toFloat()
+                      camLeftOffsetDp = prefs.getInt("cam_x", 0).toFloat()
+                      bubbleDisplaySec = prefs.getInt("read_sec", 9)
+                      textSizeSp = prefs.getInt("text_sp", 16)
+                      targetRopeRatio = prefs.getInt("rope_pct", 28) / 100f
+                      fallAnimationEnabled = prefs.getBoolean("fall_on", true)
+                      quotesEnabled = prefs.getBoolean("quotes_on", true)
+                  }
+                  root.addView(previewView, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+
+                  val restoreBtn = Button(this).apply {
+                      text = "Settings ⚙️"; setTextColor(Color.WHITE); setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+                      background = roundedBg("#D90A0D1C", "#33FFFFFF", 99f); visibility = View.GONE; setPadding(dp(16), dp(8), dp(16), dp(8))
+                  }
+
+                  val dockScroll = ScrollView(this).apply {
+                      isVerticalScrollBarEnabled = false; background = roundedBg("#E60A0D1C", "#29FFFFFF", 22f); setPadding(dp(15), dp(12), dp(15), dp(12))
+                  }
+                  val dock = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+                  dockScroll.addView(dock)
+
+                  // Header Row with Quotes: ON/OFF & Fall: ON/OFF
+                  val topRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+                  val titleTv = TextView(this).apply {
+                      text = "Companion v4.0"; setTextColor(Color.WHITE); setTypeface(typeface, Typeface.BOLD); setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+                      layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+                  }
+                  val quotesBtn = Button(this).apply {
+                      val qOn = previewView.quotesEnabled
+                      text = if (qOn) "Quotes: ON" else "Quotes: OFF"
+                      setTextColor(Color.WHITE); setTextSize(TypedValue.COMPLEX_UNIT_SP, 10f)
+                      background = roundedBg(if (qOn) "#4010B981" else "#1FFFFFFF", "#10B981", 99f)
+                      setOnClickListener {
+                          previewView.quotesEnabled = !previewView.quotesEnabled
+                          prefs.edit().putBoolean("quotes_on", previewView.quotesEnabled).apply()
+                          text = if (previewView.quotesEnabled) "Quotes: ON" else "Quotes: OFF"
+                          background = roundedBg(if (previewView.quotesEnabled) "#4010B981" else "#1FFFFFFF", "#10B981", 99f)
+                          if (previewView.quotesEnabled) previewView.speakWisdom("random") else { previewView.rebuildBubbleLayouts(); previewView.invalidate() }
+                      }
+                  }
+                  val fallBtn = Button(this).apply {
+                      val isOn = previewView.fallAnimationEnabled
+                      text = if (isOn) "Fall: ON" else "Fall: OFF"
+                      setTextColor(Color.WHITE); setTextSize(TypedValue.COMPLEX_UNIT_SP, 10f)
+                      background = roundedBg(if (isOn) "#4010B981" else "#1FFFFFFF", "#10B981", 99f)
+                      setOnClickListener {
+                          previewView.fallAnimationEnabled = !previewView.fallAnimationEnabled
+                          prefs.edit().putBoolean("fall_on", previewView.fallAnimationEnabled).apply()
+                          text = if (previewView.fallAnimationEnabled) "Fall: ON" else "Fall: OFF"
+                          background = roundedBg(if (previewView.fallAnimationEnabled) "#4010B981" else "#1FFFFFFF", "#10B981", 99f)
+                      }
+                  }
+                  val hideBtn = Button(this).apply {
+                      text = "Hide"; setTextColor(Color.WHITE); setTextSize(TypedValue.COMPLEX_UNIT_SP, 10f)
+                      background = roundedBg("#1FFFFFFF", "#29FFFFFF", 99f)
+                      setOnClickListener { dockScroll.visibility = View.GONE; restoreBtn.visibility = View.VISIBLE }
+                  }
+                  restoreBtn.setOnClickListener { dockScroll.visibility = View.VISIBLE; restoreBtn.visibility = View.GONE }
+
+                  topRow.addView(titleTv)
+                  topRow.addView(quotesBtn, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(30)).apply { rightMargin = dp(4) })
+                  topRow.addView(fallBtn, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(30)).apply { rightMargin = dp(4) })
+                  topRow.addView(hideBtn, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(30)))
+                  dock.addView(topRow)
+
+                  dock.addView(makeSectionLabel("Active Friend (Tap friend for 360° Flip & Tricks!)"))
+                  val charRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+                  val charOptions = listOf("rotate" to "🔄 All", "0" to "🥷 Ninja", "1" to "🐱 Cat", "2" to "🤖 Bot", "3" to "🦊 Fox")
+                  val charButtons = mutableListOf<Pair<String, Button>>()
+                  for ((key, label) in charOptions) {
+                      val btn = Button(this).apply {
+                          text = label; setTextColor(Color.WHITE); setTextSize(TypedValue.COMPLEX_UNIT_SP, 10f); setPadding(dp(4), dp(4), dp(4), dp(4))
+                          setOnClickListener {
+                              previewView.charMode = key
+                              if (key != "rotate") previewView.activeCharIdx = key.toInt()
+                              prefs.edit().putString("char_mode", key).apply()
+                              previewView.triggerShowstopperTrick(forceFlip = true)
+                              if (previewView.state == CompanionOverlayView.State.PERCHED && previewView.quotesEnabled) previewView.speakWisdom("random")
+                              charButtons.forEach { (k, b) -> b.background = roundedBg(if (k == key) "#E01937" else "#14FFFFFF", "#24FFFFFF", 9f) }
+                          }
+                      }
+                      btn.background = roundedBg(if (key == previewView.charMode) "#E01937" else "#14FFFFFF", "#24FFFFFF", 9f)
+                      charButtons.add(key to btn)
+                      charRow.addView(btn, LinearLayout.LayoutParams(0, dp(32), 1f).apply { rightMargin = dp(4) })
+                  }
+                  dock.addView(charRow)
+
+                  dock.addView(makeSectionLabel("Visit Frequency"))
+                  val freqRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+                  val freqOptions = listOf(0 to "Always", 30 to "30s", 60 to "1m", 120 to "2m", 180 to "3m", 300 to "5m")
+                  val freqButtons = mutableListOf<Pair<Int, Button>>()
+                  for ((sec, label) in freqOptions) {
+                      val btn = Button(this).apply {
+                          text = label; setTextColor(Color.WHITE); setTextSize(TypedValue.COMPLEX_UNIT_SP, 10f); setPadding(dp(2), dp(4), dp(2), dp(4))
+                          setOnClickListener {
+                              previewView.visitIntervalSec = sec; previewView.visitCountdown = sec
+                              prefs.edit().putInt("visit_sec", sec).apply()
+                              if (sec == 0 && previewView.state == CompanionOverlayView.State.INSIDE) previewView.deployCompanion(false)
+                              freqButtons.forEach { (s, b) -> b.background = roundedBg(if (s == sec) "#E01937" else "#14FFFFFF", "#24FFFFFF", 9f) }
+                          }
+                      }
+                      btn.background = roundedBg(if (sec == previewView.visitIntervalSec) "#E01937" else "#14FFFFFF", "#24FFFFFF", 9f)
+                      freqButtons.add(sec to btn)
+                      freqRow.addView(btn, LinearLayout.LayoutParams(0, dp(32), 1f).apply { rightMargin = dp(4) })
+                  }
+                  dock.addView(freqRow)
+
+                  addSlider(dock, "Bubble Text Size (Readability)", 12, 22, previewView.textSizeSp, "sp") { v ->
+                      previewView.textSizeSp = v; prefs.edit().putInt("text_sp", v).apply(); previewView.rebuildBubbleLayouts(); previewView.invalidate()
+                  }
+                  addSlider(dock, "Bubble Reading Time", 4, 20, previewView.bubbleDisplaySec, "s") { v ->
+                      previewView.bubbleDisplaySec = v; prefs.edit().putInt("read_sec", v).apply()
+                  }
+                  addSlider(dock, "Camera Hole Y-Position", 0, 55, previewView.camTopOffsetDp.toInt(), "px") { v ->
+                      previewView.camTopOffsetDp = v.toFloat(); prefs.edit().putInt("cam_y", v).apply(); previewView.invalidate()
+                  }
+                  addSlider(dock, "Camera Hole X-Offset", -60, 60, previewView.camLeftOffsetDp.toInt(), "px") { v ->
+                      previewView.camLeftOffsetDp = v.toFloat(); prefs.edit().putInt("cam_x", v).apply(); previewView.invalidate()
+                  }
+                  addSlider(dock, "Rope Drop Depth", 16, 48, (previewView.targetRopeRatio * 100).toInt(), "%") { v ->
+                      previewView.targetRopeRatio = v / 100f; prefs.edit().putInt("rope_pct", v).apply(); previewView.invalidate()
+                  }
+
+                  val actRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, dp(6), 0, 0) }
+                  actRow.addView(makeActionButton("In / Out", "#E01937") { previewView.toggleCompanion() }, LinearLayout.LayoutParams(0, dp(36), 1f).apply { rightMargin = dp(5) })
+                  actRow.addView(makeActionButton("Do Trick ✨", "#1AFFFFFF") {
+                      if (previewView.state == CompanionOverlayView.State.INSIDE) previewView.deployCompanion(false)
+                      previewView.triggerShowstopperTrick(forceFlip = true)
+                  }, LinearLayout.LayoutParams(0, dp(36), 1f).apply { rightMargin = dp(5) })
+                  actRow.addView(makeActionButton("Quote 🧠", "#1AFFFFFF") {
+                      if (previewView.state == CompanionOverlayView.State.INSIDE) previewView.deployCompanion(false)
+                      previewView.quotesEnabled = true; prefs.edit().putBoolean("quotes_on", true).apply()
+                      quotesBtn.text = "Quotes: ON"; quotesBtn.background = roundedBg("#4010B981", "#10B981", 99f)
+                      previewView.postDelayed({ previewView.speakWisdom("random") }, 300L)
+                  }, LinearLayout.LayoutParams(0, dp(36), 1f).apply { rightMargin = dp(5) })
+                  actRow.addView(makeActionButton("Gyro ON", "#1AFFFFFF") { gyroActive = !gyroActive; updateActivitySensor() }, LinearLayout.LayoutParams(0, dp(36), 1f))
+                  dock.addView(actRow)
+
+                  val bottomRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, dp(8), 0, 0) }
+                  overlayBtn = makeActionButton(if (OverlayService.isRunning) "Stop Overlay ⏹️" else "Float Over Apps 📌", "#10B981", Color.parseColor("#052E16")) { toggleSystemOverlay() }
+                  bottomRow.addView(overlayBtn, LinearLayout.LayoutParams(0, dp(38), 1.5f).apply { rightMargin = dp(6) })
+                  bottomRow.addView(makeActionButton("Keep Alive ⚡", "#1AFFFFFF") { requestBatteryExemption() }, LinearLayout.LayoutParams(0, dp(38), 1f))
+                  dock.addView(bottomRow)
+
+                  root.addView(dockScroll, FrameLayout.LayoutParams(minOf(resources.displayMetrics.widthPixels - dp(20), dp(410)), ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                      gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL; bottomMargin = dp(14)
+                  })
+                  root.addView(restoreBtn, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                      gravity = Gravity.BOTTOM or Gravity.END; bottomMargin = dp(20); rightMargin = dp(16)
+                  })
+                  setContentView(root)
+              }
+
+              private fun makeSectionLabel(txt: String): TextView = TextView(this).apply {
+                  text = txt; setTextColor(Color.argb(210, 255, 255, 255)); setTextSize(TypedValue.COMPLEX_UNIT_SP, 10.5f); setTypeface(typeface, Typeface.BOLD); setPadding(0, dp(5), 0, dp(3))
+              }
+
+              private fun makeActionButton(label: String, bgHex: String, textColor: Int = Color.WHITE, onClick: () -> Unit): Button = Button(this).apply {
+                  text = label; setTextColor(textColor); setTextSize(TypedValue.COMPLEX_UNIT_SP, 10.5f); setTypeface(typeface, Typeface.BOLD)
+                  background = roundedBg(bgHex, "#24FFFFFF", 10f); setOnClickListener { onClick() }
+              }
+
+              private fun addSlider(parent: LinearLayout, title: String, minVal: Int, maxVal: Int, initVal: Int, unit: String, onChange: (Int) -> Unit) {
+                  val header = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, dp(3), 0, 0) }
+                  val labelTv = TextView(this).apply { text = title; setTextColor(Color.argb(210, 255, 255, 255)); setTextSize(TypedValue.COMPLEX_UNIT_SP, 10.5f); layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f) }
+                  val valTv = TextView(this).apply { text = "$initVal$unit"; setTextColor(Color.parseColor("#6EE7B7")); setTextSize(TypedValue.COMPLEX_UNIT_SP, 10.5f); setTypeface(typeface, Typeface.BOLD) }
+                  header.addView(labelTv); header.addView(valTv); parent.addView(header)
+                  parent.addView(SeekBar(this).apply {
+                      max = maxVal - minVal; progress = (initVal - minVal).coerceIn(0, maxVal - minVal)
+                      setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                          override fun onProgressChanged(seekBar: SeekBar?, p: Int, fromUser: Boolean) { val actual = minVal + p; valTv.text = "$actual$unit"; onChange(actual) }
+                          override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+                          override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+                      })
+                  })
+              }
+
+              private fun toggleSystemOverlay() {
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
+                      startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))); return
+                  }
+                  val svc = Intent(this, OverlayService::class.java)
+                  if (OverlayService.isRunning) {
+                      prefs.edit().putBoolean("overlay_running", false).apply(); stopService(svc); overlayBtn.text = "Float Over Apps 📌"
+                  } else {
+                      prefs.edit().putBoolean("overlay_running", true).apply()
+                      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(svc) else startService(svc)
+                      overlayBtn.text = "Stop Overlay ⏹️"
+                  }
+              }
+
+              private fun requestBatteryExemption() {
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                      val pm = getSystemService(POWER_SERVICE) as PowerManager
+                      if (!pm.isIgnoringBatteryOptimizations(packageName)) {
+                          startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply { data = Uri.parse("package:$packageName") })
+                      }
+                  }
+              }
+
+              private fun updateActivitySensor() {
+                  val sm = sensorManager ?: return
+                  if (gyroActive) sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)?.let { sm.registerListener(this, it, SensorManager.SENSOR_DELAY_UI) }
+                  else { sm.unregisterListener(this); previewView.phoneTiltDeg = 0f }
+              }
+
+              override fun onResume() { super.onResume(); overlayBtn.text = if (OverlayService.isRunning) "Stop Overlay ⏹️" else "Float Over Apps 📌"; if (gyroActive) updateActivitySensor() }
+              override fun onPause() { sensorManager?.unregisterListener(this); super.onPause() }
+              override fun onSensorChanged(event: SensorEvent?) { if (event?.sensor?.type == Sensor.TYPE_ACCELEROMETER) previewView.phoneTiltDeg = (-event.values[0] * 4.2f).coerceIn(-40f, 40f) }
+              override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+          }
+          EOF
+
+      - name: Build Unsigned Release APK
+        run: |
+          chmod +x gradlew || true
+          gradle assembleRelease -x lint -x lintVitalRelease --no-daemon
+
+      - name: Sign & Align Release APK
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          mkdir -p release-output
+          KS_PASS="${KEYSTORE_PASSWORD:-companion123}"
+          K_ALIAS="${KEY_ALIAS:-companion}"
+          K_PASS="${KEY_PASSWORD:-companion123}"
+
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 --decode > release.jks
+          else
+            keytool -genkeypair -v -keystore release.jks -alias "$K_ALIAS" -keyalg RSA -keysize 2048 -validity 10000 -storepass "$KS_PASS" -keypass "$K_PASS" -dname "CN=PunchHoleCompanion, OU=Mobile, O=Companion, L=City, S=State, C=IN"
+            base64 -w 0 release.jks > release-output/keystore-base64.txt
+          fi
+
+          BUILD_TOOLS=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)
+          UNSIGNED_APK="app/build/outputs/apk/release/app-release-unsigned.apk"
+          ALIGNED_APK="release-output/app-release-aligned.apk"
+          SIGNED_APK="release-output/PunchHoleCompanion-release-signed.apk"
+
+          "$BUILD_TOOLS/zipalign" -v -p 4 "$UNSIGNED_APK" "$ALIGNED_APK"
+          "$BUILD_TOOLS/apksigner" sign --ks release.jks --ks-key-alias "$K_ALIAS" --ks-pass pass:"$KS_PASS" --key-pass pass:"$K_PASS" --out "$SIGNED_APK" "$ALIGNED_APK"
+          rm -f "$ALIGNED_APK"
+
+      - name: Upload Signed Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: PunchHoleCompanion-Kotlin-Release-APK
+          path: release-output/
