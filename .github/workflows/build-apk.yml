@@ -29,7 +29,7 @@ jobs:
           echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
-      - name: Generate Kotlin Project & Unified v6.1 Source
+      - name: Generate Kotlin Project & Unified v6.2 Source
         run: |
           rm -rf android build.gradle settings.gradle app
           mkdir -p app/src/main/java/com/companion/punchhole
@@ -67,8 +67,8 @@ jobs:
                   applicationId = "com.companion.punchhole"
                   minSdk = 26
                   targetSdk = 34
-                  versionCode = 7
-                  versionName = "6.1-kotlin"
+                  versionCode = 8
+                  versionName = "6.2-kotlin"
               }
               compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
               kotlinOptions { jvmTarget = "17" }
@@ -149,6 +149,7 @@ jobs:
           import android.graphics.*
           import android.graphics.drawable.GradientDrawable
           import android.hardware.*
+          import android.hardware.input.InputManager
           import android.net.Uri
           import android.os.*
           import android.provider.Settings
@@ -244,7 +245,7 @@ jobs:
               context: Context,
               val isSystemOverlay: Boolean,
               var onStateChanged: ((Boolean) -> Unit)? = null,
-              var onCharacterBoundsUpdated: ((Float, Float, Boolean, Boolean) -> Unit)? = null
+              var onCharacterBoundsUpdated: ((Float, Float, Boolean) -> Unit)? = null
           ) : View(context), Choreographer.FrameCallback {
 
               enum class State { INSIDE, PEEKABOO, DROP_ROPE, SLIDE_DOWN, PERCHED, CLIMB_UP, RETRACT_ROPE }
@@ -316,17 +317,8 @@ jobs:
               private var lastSecondTickMs = SystemClock.elapsedRealtime()
               private var lastCharXDp = 0f; private var lastCharYDp = 0f
 
-              fun hasActiveBubble(): Boolean {
-                  val w = currentWisdom ?: return false
-                  if (!quotesEnabled) return false
-                  return (SystemClock.elapsedRealtime() - bubbleStartMs) < bubbleDurationMs && w.body.isNotEmpty()
-              }
-
               fun dismissBubble() {
-                  if (currentWisdom != null) {
-                      currentWisdom = null
-                      invalidate()
-                  }
+                  if (currentWisdom != null) { currentWisdom = null; invalidate() }
               }
 
               private val gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
@@ -371,8 +363,8 @@ jobs:
                   invalidate()
                   if (state == State.INSIDE || isLandscapePaused) {
                       loopActive = false
+                      onCharacterBoundsUpdated?.invoke(0f, 0f, false)
                       onStateChanged?.invoke(false)
-                      onCharacterBoundsUpdated?.invoke(0f, 0f, false, false)
                       invalidate()
                       return
                   }
@@ -440,7 +432,9 @@ jobs:
 
               fun retractCompanion() {
                   currentWisdom = null; currentAction = NaturalAction.CALM_PERCH; state = State.CLIMB_UP; slideVel = 0f
-                  visitCountdown = visitIntervalSec; lastSecondTickMs = SystemClock.elapsedRealtime(); startLoop()
+                  visitCountdown = visitIntervalSec; lastSecondTickMs = SystemClock.elapsedRealtime()
+                  onCharacterBoundsUpdated?.invoke(0f, 0f, false)
+                  startLoop()
               }
 
               fun toggleCompanion() { if (state == State.INSIDE || state == State.RETRACT_ROPE) deployCompanion(true) else retractCompanion() }
@@ -475,7 +469,7 @@ jobs:
                   simTime += 0.016f
                   when (state) {
                       State.PEEKABOO -> {
-                          peekProgress += 0.015f
+                          peekProgress += 0.016f
                           targetGazeX = sin(peekProgress * 5.5f) * 2.8f
                           gazeX += (targetGazeX - gazeX) * 0.15f
                           headLookLagX += (gazeX - headLookLagX) * 0.08f
@@ -580,7 +574,7 @@ jobs:
 
               override fun onDraw(canvas: Canvas) {
                   super.onDraw(canvas)
-                  if (isLandscapePaused) return
+                  if (isLandscapePaused || state == State.INSIDE) return
 
                   val widthDp = width / density
                   val screenHeightDp = resources.displayMetrics.heightPixels / density
@@ -596,8 +590,6 @@ jobs:
                       canvas.drawRoundRect(rectF, 999f, 999f, paint)
                   }
 
-                  if (state == State.INSIDE) { canvas.restore(); return }
-
                   if (state == State.PEEKABOO) {
                       val smoothPeek = sin(peekProgress.coerceIn(0f, 1f) * PI.toFloat() * 0.85f)
                       val headRise = smoothPeek * 17f
@@ -607,7 +599,7 @@ jobs:
                       canvas.drawOval(anchorX + 6f, anchorY + 8f, anchorX + 13f, anchorY + 13f, paint)
                       canvas.drawOval(anchorX - 13f, anchorY + 8f, anchorX - 6f, anchorY + 13f, rimPaint)
                       canvas.drawOval(anchorX + 6f, anchorY + 8f, anchorX + 13f, anchorY + 13f, rimPaint)
-                      onCharacterBoundsUpdated?.invoke(0f, anchorY, false, false)
+                      onCharacterBoundsUpdated?.invoke(0f, anchorY, false)
                       canvas.restore()
                       return
                   }
@@ -627,8 +619,7 @@ jobs:
                       val charY = invT * invT * anchorY + 2f * invT * t * midY + t * t * knotY + dangleBlend * 18f
 
                       lastCharXDp = charX; lastCharYDp = charY
-                      val bubbleShowing = hasActiveBubble()
-                      onCharacterBoundsUpdated?.invoke(charX - widthDp / 2f, charY - 32f, state == State.PERCHED, bubbleShowing)
+                      onCharacterBoundsUpdated?.invoke(charX - widthDp / 2f, charY - 32f, state == State.PERCHED)
 
                       paint.style = Paint.Style.FILL
                       for (f in fireflies) {
@@ -649,9 +640,11 @@ jobs:
                       }
 
                       canvas.restore()
-                      if (bubbleShowing) drawSpeechBubbleBelowCharacter(canvas, char, charX * density, (knotY + 30f) * density)
+                      if (quotesEnabled && currentWisdom != null) {
+                          drawSpeechBubbleBelowCharacter(canvas, char, charX * density, (knotY + 30f) * density)
+                      }
                   } else {
-                      onCharacterBoundsUpdated?.invoke(0f, 0f, false, false)
+                      onCharacterBoundsUpdated?.invoke(0f, 0f, false)
                       canvas.restore()
                   }
               }
@@ -944,7 +937,7 @@ jobs:
                           path.reset(); path.moveTo(-9.2f, -6.8f); path.lineTo(-13f, -17.2f + earL); path.lineTo(-4f, -10.2f); path.close(); canvas.drawPath(path, paint)
                           path.reset(); path.moveTo(4f, -10.2f); path.lineTo(12f, -17.2f - earL); path.lineTo(9.2f, -6.8f); path.close(); canvas.drawPath(path, paint)
 
-                          paint.shader = headShader; canvas.drawCircle(0f, 0f, 13.2f, paint); paint.shader = null
+                                                    paint.shader = headShader; canvas.drawCircle(0f, 0f, 13.2f, paint); paint.shader = null
                           canvas.drawCircle(0f, 0f, 13.2f, rimPaint)
                           paint.color = Color.parseColor("#FFFBEB")
                           rectF.set(-12.8f, -0.5f, 0.5f, 10.0f); canvas.drawOval(rectF, paint)
@@ -1085,10 +1078,7 @@ jobs:
               private lateinit var punchHoleParams: WindowManager.LayoutParams
               private lateinit var charTouchParams: WindowManager.LayoutParams
               private var sensorManager: SensorManager? = null
-              private var isScreenOn = true
-              private var isCompanionOut = true
-              private var isPortrait = true
-              private var sensorRegistered = false
+              private var isScreenOn = true; private var isCompanionOut = true; private var isPortrait = true; private var sensorRegistered = false
 
               private val screenReceiver = object : BroadcastReceiver() {
                   override fun onReceive(context: Context?, intent: Intent?) {
@@ -1106,64 +1096,29 @@ jobs:
                   prefs.edit().putBoolean("overlay_running", true).apply()
                   prefs.registerOnSharedPreferenceChangeListener(this)
                   startOverlayForeground()
-                  registerReceiver(screenReceiver, IntentFilter().apply {
-                      addAction(Intent.ACTION_SCREEN_OFF)
-                      addAction(Intent.ACTION_SCREEN_ON)
-                  })
+                  registerReceiver(screenReceiver, IntentFilter().apply { addAction(Intent.ACTION_SCREEN_OFF); addAction(Intent.ACTION_SCREEN_ON) })
                   windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
                   sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
                   isPortrait = resources.configuration.orientation != Configuration.ORIENTATION_LANDSCAPE
 
-                  val dm = resources.displayMetrics
-                  val density = dm.density
-                  val layoutType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-                      WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-                  else
-                      @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE
+                  val dm = resources.displayMetrics; val density = dm.density
+                  val layoutType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY else @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE
 
-                  // 1. Visual Layer: Always 100% click-through (FLAG_NOT_TOUCHABLE)
                   val visualParams = WindowManager.LayoutParams(
-                      minOf(dm.widthPixels, (340 * density).toInt()),
-                      (480 * density).toInt(),
-                      layoutType,
-                      WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                              WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
-                              WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                              WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                      minOf(dm.widthPixels, (340 * density).toInt()), (480 * density).toInt(), layoutType,
+                      WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
                       PixelFormat.TRANSLUCENT
-                  ).apply {
-                      gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-                      applyCutoutFlag(this)
-                  }
+                  ).apply { gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL; applyCutoutFlag(this) }
 
-                  // 2. Character Hitbox: Starts untouchable (0x0) until character is actually perched
                   charTouchParams = WindowManager.LayoutParams(
-                      0,
-                      0,
-                      layoutType,
-                      WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                              WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
-                              WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
-                              WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH or
-                              WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                              WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                      0, 0, layoutType,
+                      WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
                       PixelFormat.TRANSLUCENT
-                  ).apply {
-                      gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-                      x = 0
-                      y = (90 * density).toInt()
-                      applyCutoutFlag(this)
-                  }
+                  ).apply { gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL; applyCutoutFlag(this) }
 
-                  // 3. Tight Camera Hole Hitbox (44dp x 32dp strictly over physical camera lens)
                   punchHoleParams = WindowManager.LayoutParams(
-                      (44 * density).toInt(),
-                      (32 * density).toInt(),
-                      layoutType,
-                      WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                              WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
-                              WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                              WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                      (38 * density).toInt(), (28 * density).toInt(), layoutType,
+                      WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
                       PixelFormat.TRANSLUCENT
                   ).apply {
                       gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
@@ -1173,20 +1128,15 @@ jobs:
                   }
 
                   companionView = CompanionOverlayView(
-                      this,
-                      isSystemOverlay = true,
+                      this, isSystemOverlay = true,
                       onStateChanged = { out ->
-                          isCompanionOut = out
-                          updateSensorRegistration()
+                          isCompanionOut = out; updateSensorRegistration()
                           if (!out) setCharacterTouchEnabled(false, 0f, 0f)
                       },
-                      onCharacterBoundsUpdated = { offsetXDp, topYDp, active, _ ->
+                      onCharacterBoundsUpdated = { offsetXDp, topYDp, active ->
                           setCharacterTouchEnabled(active && isPortrait && isCompanionOut, offsetXDp, topYDp)
                       }
-                  ).also { view ->
-                      syncPreferencesToView(view)
-                      windowManager.addView(view, visualParams)
-                  }
+                  ).also { view -> syncPreferencesToView(view); windowManager.addView(view, visualParams) }
 
                   val charGesture = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
                       override fun onDown(e: MotionEvent): Boolean = true
@@ -1194,17 +1144,11 @@ jobs:
                       override fun onDoubleTap(e: MotionEvent): Boolean { companionView?.retractCompanion(); return true }
                       override fun onScroll(e1: MotionEvent?, e2: MotionEvent, dx: Float, dy: Float): Boolean { companionView?.applyHorizontalImpulse(-dx); return true }
                   })
-
                   characterTouchView = View(this).apply {
-                      setBackgroundColor(Color.TRANSPARENT)
-                      visibility = View.GONE
+                      setBackgroundColor(Color.TRANSPARENT); visibility = View.GONE
                       setOnTouchListener { _, event ->
-                          if (event.action == MotionEvent.ACTION_OUTSIDE) {
-                              companionView?.dismissBubble()
-                              false
-                          } else {
-                              charGesture.onTouchEvent(event)
-                          }
+                          if (event.action == MotionEvent.ACTION_OUTSIDE) { companionView?.dismissBubble(); false }
+                          else charGesture.onTouchEvent(event)
                       }
                   }.also { windowManager.addView(it, charTouchParams) }
 
@@ -1212,7 +1156,6 @@ jobs:
                       override fun onDown(e: MotionEvent): Boolean = true
                       override fun onSingleTapUp(e: MotionEvent): Boolean { companionView?.toggleCompanion(); return true }
                   })
-
                   punchHoleTouchView = View(this).apply {
                       setBackgroundColor(Color.TRANSPARENT)
                       setOnTouchListener { _, event -> holeGesture.onTouchEvent(event) }
@@ -1227,24 +1170,18 @@ jobs:
                   if (!enable) {
                       val wasTouchable = (charTouchParams.flags and WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE) == 0
                       if (v.visibility != View.GONE || wasTouchable || charTouchParams.width != 0) {
-                          v.visibility = View.GONE
-                          charTouchParams.width = 0
-                          charTouchParams.height = 0
+                          v.visibility = View.GONE; charTouchParams.width = 0; charTouchParams.height = 0
                           charTouchParams.flags = charTouchParams.flags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
                           try { windowManager.updateViewLayout(v, charTouchParams) } catch (_: Exception) {}
                       }
                   } else {
-                      val targetW = (56 * density).toInt()
-                      val targetH = (64 * density).toInt()
                       val newX = (offsetXDp * density).roundToInt()
                       val newY = (topYDp * density).roundToInt().coerceAtLeast((36 * density).toInt())
                       val wasUntouchable = (charTouchParams.flags and WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE) != 0
                       if (v.visibility != View.VISIBLE || wasUntouchable || abs(charTouchParams.x - newX) > 6 || abs(charTouchParams.y - newY) > 6) {
                           v.visibility = View.VISIBLE
-                          charTouchParams.width = targetW
-                          charTouchParams.height = targetH
-                          charTouchParams.x = newX
-                          charTouchParams.y = newY
+                          charTouchParams.width = (52 * density).toInt(); charTouchParams.height = (58 * density).toInt()
+                          charTouchParams.x = newX; charTouchParams.y = newY
                           charTouchParams.flags = charTouchParams.flags and WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE.inv()
                           try { windowManager.updateViewLayout(v, charTouchParams) } catch (_: Exception) {}
                       }
@@ -1253,10 +1190,7 @@ jobs:
 
               private fun applyCutoutFlag(lp: WindowManager.LayoutParams) {
                   if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                      lp.layoutInDisplayCutoutMode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
-                          WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
-                      else
-                          WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+                      lp.layoutInDisplayCutoutMode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS else WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
                   }
               }
 
@@ -1272,9 +1206,7 @@ jobs:
                   view.targetRopeRatio = prefs.getInt("rope_pct", 24) / 100f
                   view.fallAnimationEnabled = prefs.getBoolean("fall_on", true)
                   view.quotesEnabled = prefs.getBoolean("quotes_on", true)
-                  view.rebuildBubbleLayouts()
-                  view.startLoop()
-                  view.invalidate()
+                  view.rebuildBubbleLayouts(); view.startLoop(); view.invalidate()
 
                   punchHoleTouchView?.let { hv ->
                       punchHoleParams.x = (view.camLeftOffsetDp * density).roundToInt()
@@ -1283,43 +1215,29 @@ jobs:
                   }
               }
 
-              override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
-                  companionView?.let { syncPreferencesToView(it) }
-              }
+              override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) { companionView?.let { syncPreferencesToView(it) } }
 
               private fun updateSensorRegistration() {
                   val sm = sensorManager ?: return
                   val shouldListen = isScreenOn && isCompanionOut && isPortrait
                   if (shouldListen && !sensorRegistered) {
-                      sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)?.let {
-                          sm.registerListener(this, it, SensorManager.SENSOR_DELAY_UI)
-                          sensorRegistered = true
-                      }
+                      sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)?.let { sm.registerListener(this, it, SensorManager.SENSOR_DELAY_UI); sensorRegistered = true }
                   } else if (!shouldListen && sensorRegistered) {
-                      sm.unregisterListener(this)
-                      sensorRegistered = false
+                      sm.unregisterListener(this); sensorRegistered = false
                   }
               }
 
               override fun onConfigurationChanged(newConfig: Configuration) {
                   super.onConfigurationChanged(newConfig)
                   isPortrait = newConfig.orientation != Configuration.ORIENTATION_LANDSCAPE
-                  companionView?.apply {
-                      isLandscapePaused = !isPortrait
-                      visibility = if (isPortrait) View.VISIBLE else View.GONE
-                      if (isPortrait) startLoop()
-                  }
+                  companionView?.apply { isLandscapePaused = !isPortrait; visibility = if (isPortrait) View.VISIBLE else View.GONE; if (isPortrait) startLoop() }
                   punchHoleTouchView?.visibility = if (isPortrait) View.VISIBLE else View.GONE
                   if (!isPortrait) setCharacterTouchEnabled(false, 0f, 0f)
                   updateSensorRegistration()
               }
 
               override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-                  if (intent?.action == "STOP_OVERLAY") {
-                      prefs.edit().putBoolean("overlay_running", false).apply()
-                      stopSelf()
-                      return START_NOT_STICKY
-                  }
+                  if (intent?.action == "STOP_OVERLAY") { prefs.edit().putBoolean("overlay_running", false).apply(); stopSelf(); return START_NOT_STICKY }
                   return START_STICKY
               }
 
@@ -1430,7 +1348,7 @@ jobs:
 
                   val topRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
                   val titleTv = TextView(this).apply {
-                      text = "Companion v6.1"; setTextColor(Color.WHITE); setTypeface(typeface, Typeface.BOLD); setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+                      text = "Companion v6.2"; setTextColor(Color.WHITE); setTypeface(typeface, Typeface.BOLD); setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
                       layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
                   }
                   val quotesBtn = Button(this).apply {
@@ -1647,44 +1565,4 @@ jobs:
         with:
           name: PunchHoleCompanion-Kotlin-Release-APK
           path: release-output/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
