@@ -29,7 +29,7 @@ jobs:
           echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
-      - name: Generate Kotlin Android Project & Source Files
+      - name: Generate Kotlin Project & Unified v6.1 Source
         run: |
           rm -rf android build.gradle settings.gradle app
           mkdir -p app/src/main/java/com/companion/punchhole
@@ -37,9 +37,7 @@ jobs:
           mkdir -p app/src/main/res/mipmap-anydpi-v26
 
           cat << 'EOF' > settings.gradle.kts
-          pluginManagement {
-              repositories { google(); mavenCentral(); gradlePluginPortal() }
-          }
+          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
           dependencyResolutionManagement {
               repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
               repositories { google(); mavenCentral() }
@@ -58,14 +56,10 @@ jobs:
           cat << 'EOF' > gradle.properties
           org.gradle.jvmargs=-Xmx3g -XX:+HeapDumpOnOutOfMemoryError
           android.useAndroidX=true
-          kotlin.code.style=official
           EOF
 
           cat << 'EOF' > app/build.gradle.kts
-          plugins {
-              id("com.android.application")
-              id("org.jetbrains.kotlin.android")
-          }
+          plugins { id("com.android.application"); id("org.jetbrains.kotlin.android") }
           android {
               namespace = "com.companion.punchhole"
               compileSdk = 34
@@ -73,13 +67,10 @@ jobs:
                   applicationId = "com.companion.punchhole"
                   minSdk = 26
                   targetSdk = 34
-                  versionCode = 6
-                  versionName = "6.0-kotlin"
+                  versionCode = 7
+                  versionName = "6.1-kotlin"
               }
-              compileOptions {
-                  sourceCompatibility = JavaVersion.VERSION_17
-                  targetCompatibility = JavaVersion.VERSION_17
-              }
+              compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
               kotlinOptions { jvmTarget = "17" }
           }
           EOF
@@ -92,7 +83,6 @@ jobs:
               <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
               <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
               <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-
               <application
                   android:allowBackup="true"
                   android:icon="@mipmap/ic_launcher"
@@ -101,7 +91,6 @@ jobs:
                   android:supportsRtl="true"
                   android:hardwareAccelerated="true"
                   android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
-
                   <activity
                       android:name=".MainActivity"
                       android:exported="true"
@@ -113,24 +102,15 @@ jobs:
                           <category android:name="android.intent.category.LAUNCHER" />
                       </intent-filter>
                   </activity>
-
                   <service
                       android:name=".OverlayService"
                       android:exported="false"
                       android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize"
                       android:foregroundServiceType="specialUse">
-                      <property
-                          android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                          android:value="persistent_punch_hole_companion_overlay" />
+                      <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="persistent_punch_hole_companion_overlay" />
                   </service>
-
-                  <receiver
-                      android:name=".BootReceiver"
-                      android:enabled="true"
-                      android:exported="true">
-                      <intent-filter>
-                          <action android:name="android.intent.action.BOOT_COMPLETED" />
-                      </intent-filter>
+                  <receiver android:name=".BootReceiver" android:enabled="true" android:exported="true">
+                      <intent-filter><action android:name="android.intent.action.BOOT_COMPLETED" /></intent-filter>
                   </receiver>
               </application>
           </manifest>
@@ -159,10 +139,27 @@ jobs:
           </adaptive-icon>
           EOF
 
-          cat << 'EOF' > app/src/main/java/com/companion/punchhole/WisdomRepository.kt
+          cat << 'EOF' > app/src/main/java/com/companion/punchhole/PunchHoleApp.kt
           package com.companion.punchhole
 
+          import android.app.*
+          import android.content.*
+          import android.content.pm.ServiceInfo
+          import android.content.res.Configuration
+          import android.graphics.*
+          import android.graphics.drawable.GradientDrawable
+          import android.hardware.*
+          import android.net.Uri
+          import android.os.*
+          import android.provider.Settings
+          import android.text.Layout
+          import android.text.StaticLayout
+          import android.text.TextPaint
+          import android.util.TypedValue
+          import android.view.*
+          import android.widget.*
           import java.util.Calendar
+          import kotlin.math.*
           import kotlin.random.Random
 
           data class WisdomItem(val categoryBadge: String, val title: String?, val body: String)
@@ -174,32 +171,28 @@ jobs:
                   "Your future self is depending on the work you put in today.",
                   "Action cures anxiety. Dive into your task for just 5 minutes!",
                   "Small daily improvements over time lead to stunning results.",
-                  "Energy flows where attention goes. Guard your focus fiercely.",
-                  "Do the hardest task first thing. Everything else feels effortless after."
+                  "Energy flows where attention goes. Guard your focus fiercely."
               )
               private val workChecks = listOf(
                   "Time for a deep work sprint! Put your phone face down for 25 minutes. 💻",
                   "Stand up, roll your shoulders back, take 3 deep breaths, and reset! 🌟",
                   "Single-tasking is a superpower. Do one thing right now with 100% presence.",
-                  "Drink a glass of water! Even 2% dehydration drops cognitive focus by 15%.",
-                  "20-20-20 Eye Reset: Look at something 20 feet away for 20 seconds right now."
+                  "Drink a glass of water! Even 2% dehydration drops cognitive focus by 15%."
               )
               private val psychPrinciples = listOf(
                   "Benjamin Franklin Effect" to "Want someone to like you? Ask them for a small favor. Our brains justify helping someone by deciding we like them.",
-                  "The Zeigarnik Effect" to "Your brain remembers unfinished tasks far better than completed ones. Simply starting for 2 minutes silences procrastination!",
+                  "The Zeigarnik Effect" to "Your brain remembers unfinished tasks far better than completed ones. Starting for 2 minutes silences procrastination!",
                   "The 2-Minute Rule" to "If a task takes less than 2 minutes to do, do it immediately instead of scheduling it.",
-                  "The Pygmalion Effect" to "Higher expectations directly lead to higher performance—both in how you treat others and yourself.",
-                  "Tactical Silence" to "In negotiations or deep conversations, pause for 4 seconds after someone speaks. They will often reveal the real truth.",
-                  "Labeling Emotion" to "Saying 'It sounds like you feel frustrated' deactivates the brain's threat center and builds instant trust.",
-                  "The Pratfall Effect" to "Competent people become more likable when they admit a small flaw. Authenticity connects."
+                  "The Pygmalion Effect" to "Higher expectations directly lead to higher performance—both in others and yourself.",
+                  "Tactical Silence" to "In negotiations, pause for 4 seconds after someone speaks. They will often reveal the real truth.",
+                  "Labeling Emotion" to "Saying 'It sounds like you feel frustrated' deactivates the brain's threat center and builds trust."
               )
               private val cognitiveBiases = listOf(
-                  "Dunning-Kruger Effect" to "Beginners often overestimate their skill, while experts underestimate theirs. Stay curious!",
+                  "Dunning-Kruger Effect" to "Beginners overestimate their skill, while experts underestimate theirs. Stay curious!",
                   "Confirmation Bias" to "Our brains filter for evidence that agrees with us. Actively ask: 'What would prove me wrong?'",
                   "Loss Aversion" to "Losing $100 hurts twice as much as gaining $100 feels good. Don't let fear block smart risks.",
-                  "Sunk Cost Fallacy" to "Continuing a bad project just because you already spent time on it. Only future value matters!",
-                  "Spotlight Effect" to "We think everyone notices our stumbles, but people are 99% focused on themselves. Move boldly!",
-                  "Planning Fallacy" to "We always assume tasks will go according to the best-case scenario. Multiply time estimates by 1.5x."
+                  "Sunk Cost Fallacy" to "Continuing a bad project just because you spent time on it. Only future value matters!",
+                  "Spotlight Effect" to "We think everyone notices our stumbles, but people are 99% focused on themselves. Move boldly!"
               )
               private val stoicMaxims = listOf(
                   "Marcus Aurelius" to "'The impediment to action advances action. What stands in the way becomes the way.'",
@@ -207,15 +200,13 @@ jobs:
                   "Aristotle" to "'We are what we repeatedly do. Excellence, then, is not an act, but a habit.'",
                   "Epictetus" to "'Make the best use of what is in your power, and take the rest as it happens.'",
                   "Viktor Frankl" to "'Between stimulus and response there is a space. In that space is our power to choose.'",
-                  "Seneca on Fear" to "'We suffer more often in imagination than in reality.'",
-                  "Miyamoto Musashi" to "'Do nothing which is of no use. Step by step walk the thousand-mile road.'"
+                  "Seneca on Fear" to "'We suffer more often in imagination than in reality.'"
               )
               private val mentalModels = listOf(
                   "Pareto 80/20 Rule" to "80% of your results come from 20% of your efforts. Double down on your highest-leverage 20%.",
-                  "Parkinson's Law" to "Work expands to fill the time available for its completion. Set shorter, tighter deadlines.",
+                  "Parkinson's Law" to "Work expands to fill the time available for its completion. Set shorter deadlines.",
                   "First Principles" to "Break complex problems down to their fundamental truths and build up from there.",
-                  "Inversion Model" to "Instead of asking how to succeed, ask 'What would guarantee failure?'—and avoid those traps.",
-                  "Occam's Razor" to "Among competing explanations, the simplest one with the fewest assumptions is usually right."
+                  "Inversion Model" to "Instead of asking how to succeed, ask 'What would guarantee failure?'—and avoid those traps."
               )
 
               private val decks = mutableMapOf<String, ArrayDeque<Int>>()
@@ -248,59 +239,27 @@ jobs:
                   }
               }
           }
-          EOF
-
-          cat << 'EOF' > app/src/main/java/com/companion/punchhole/CompanionOverlayView.kt
-          package com.companion.punchhole
-
-          import android.content.Context
-          import android.graphics.*
-          import android.os.SystemClock
-          import android.text.Layout
-          import android.text.StaticLayout
-          import android.text.TextPaint
-          import android.view.Choreographer
-          import android.view.GestureDetector
-          import android.view.MotionEvent
-          import android.view.View
-          import kotlin.math.*
-          import kotlin.random.Random
 
           class CompanionOverlayView(
               context: Context,
               val isSystemOverlay: Boolean,
               var onStateChanged: ((Boolean) -> Unit)? = null,
-              var onCharacterBoundsUpdated: ((Float, Float, Boolean) -> Unit)? = null
+              var onCharacterBoundsUpdated: ((Float, Float, Boolean, Boolean) -> Unit)? = null
           ) : View(context), Choreographer.FrameCallback {
 
               enum class State { INSIDE, PEEKABOO, DROP_ROPE, SLIDE_DOWN, PERCHED, CLIMB_UP, RETRACT_ROPE }
-              enum class CharType(
-                  val displayName: String,
-                  val accentColor: Int,
-                  val topColor: Int,
-                  val bottomColor: Int,
-                  val limbColor: Int
-              ) {
+              enum class CharType(val displayName: String, val accentColor: Int, val topColor: Int, val bottomColor: Int, val limbColor: Int) {
                   NINJA("SHINOBI", Color.parseColor("#FF2E54"), Color.parseColor("#27304A"), Color.parseColor("#0B0E17"), Color.parseColor("#131826")),
                   CAT("KURO NEKO", Color.parseColor("#FBBF24"), Color.parseColor("#2B2D3C"), Color.parseColor("#0D0E14"), Color.parseColor("#171924")),
                   BOT("BIBI BOT", Color.parseColor("#22D3EE"), Color.parseColor("#FFFFFF"), Color.parseColor("#CBD5E1"), Color.parseColor("#94A3B8")),
                   FOX("KITSUNE", Color.parseColor("#FB923C"), Color.parseColor("#FF7A18"), Color.parseColor("#C2410C"), Color.parseColor("#7C2D12"))
               }
-
-              // Natural, lifelike behaviors instead of stiff mechanical rotations
-              enum class NaturalAction {
-                  CALM_PERCH, HAPPY_WAVE, CURIOUS_TILT, STRETCH_YAWN, PLAYFUL_SWING, ONE_HAND_DANGLE, COZY_DOZE
-              }
-
+              enum class NaturalAction { CALM_PERCH, HAPPY_WAVE, CURIOUS_TILT, STRETCH_YAWN, PLAYFUL_SWING, ONE_HAND_DANGLE, COZY_DOZE }
               private data class Firefly(var x: Float, var y: Float, var vx: Float, var vy: Float, var radius: Float, var alpha: Float, var color: Int)
 
               private val density = resources.displayMetrics.density
               private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-              private val rimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                  style = Paint.Style.STROKE
-                  strokeWidth = 1.15f
-                  color = Color.argb(85, 255, 255, 255)
-              }
+              private val rimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 1.15f; color = Color.argb(85, 255, 255, 255) }
               private val titlePaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD) }
               private val bodyPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#F1F5F9"); typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL) }
               private val headerPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 11.5f * density; typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD) }
@@ -313,11 +272,11 @@ jobs:
               var activeCharIdx: Int = 0
               var visitIntervalSec: Int = 120
               var visitCountdown: Int = 120
-              var hangOutTimer: Int = 28
+              var hangOutTimer: Int = 24
               var camTopOffsetDp: Float = 6f
               var camLeftOffsetDp: Float = 0f
-              var targetRopeRatio: Float = 0.28f
-              var bubbleDisplaySec: Int = 9
+              var targetRopeRatio: Float = 0.24f
+              var bubbleDisplaySec: Int = 8
               var textSizeSp: Int = 16
               var fallAnimationEnabled: Boolean = true
               var quotesEnabled: Boolean = true
@@ -337,36 +296,38 @@ jobs:
               private var legSwingAngle = 0f; private var legSwingVel = 0f
               private var bodySquash = 0f; private var bodySquashVel = 0f
 
-              // Smooth Spring-Driven Organic Pose Variables
               private var simTime = 0f
               private var currentAction = NaturalAction.CALM_PERCH
               private var actionCycleIdx = 0
               private var actionTimer = 0f
-              private var nextActionDelay = 160
-
-              // Spring-interpolated pose channels (0.0 to 1.0) so transitions never snap
-              private var waveBlend = 0f
-              private var stretchBlend = 0f
-              private var curiousBlend = 0f
-              private var dangleBlend = 0f
-              private var dozeBlend = 0f
+              private var nextActionDelay = 150
+              private var waveBlend = 0f; private var stretchBlend = 0f; private var curiousBlend = 0f; private var dangleBlend = 0f; private var dozeBlend = 0f
 
               private var blinkTimer = 90; private var blinkAmount = 0f
-              private var gazeX = 0f; private var gazeY = 0f
-              private var targetGazeX = 0f; private var targetGazeY = 0f
-              private var headLookLagX = 0f
-              private var gazeTimer = 95
+              private var gazeX = 0f; private var gazeY = 0f; private var targetGazeX = 0f; private var targetGazeY = 0f; private var headLookLagX = 0f; private var gazeTimer = 95
               private var tailPhase = 0f; private var tailSpeed = 2.6f
-
               private val ribbonNodes = Array(8) { PointF(0f, 0f) }
               private val fireflies = ArrayList<Firefly>(20)
 
               private var currentWisdom: WisdomItem? = null
-              private var bubbleStartMs = 0L; private var bubbleDurationMs = 9000L
+              private var bubbleStartMs = 0L; private var bubbleDurationMs = 8000L
               private var cachedTitleLayout: StaticLayout? = null; private var cachedBodyLayout: StaticLayout? = null
               private var loopActive = false
               private var lastSecondTickMs = SystemClock.elapsedRealtime()
               private var lastCharXDp = 0f; private var lastCharYDp = 0f
+
+              fun hasActiveBubble(): Boolean {
+                  val w = currentWisdom ?: return false
+                  if (!quotesEnabled) return false
+                  return (SystemClock.elapsedRealtime() - bubbleStartMs) < bubbleDurationMs && w.body.isNotEmpty()
+              }
+
+              fun dismissBubble() {
+                  if (currentWisdom != null) {
+                      currentWisdom = null
+                      invalidate()
+                  }
+              }
 
               private val gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
                   override fun onDown(e: MotionEvent): Boolean = true
@@ -411,7 +372,7 @@ jobs:
                   if (state == State.INSIDE || isLandscapePaused) {
                       loopActive = false
                       onStateChanged?.invoke(false)
-                      onCharacterBoundsUpdated?.invoke(0f, 0f, false)
+                      onCharacterBoundsUpdated?.invoke(0f, 0f, false, false)
                       invalidate()
                       return
                   }
@@ -429,55 +390,34 @@ jobs:
                       if (hangOutTimer <= 0) retractCompanion()
                   } else if (state == State.INSIDE) {
                       visitCountdown -= elapsedSec
-                      if (visitCountdown <= 0) {
-                          visitCountdown = visitIntervalSec
-                          deployCompanion(true)
-                      }
+                      if (visitCountdown <= 0) { visitCountdown = visitIntervalSec; deployCompanion(true) }
                   }
               }
 
-              fun spawnSoftFireflies(cx: Float, cy: Float, count: Int = 8) {
+              fun spawnSoftFireflies(cx: Float, cy: Float, count: Int = 7) {
                   val char = CharType.values()[activeCharIdx.coerceIn(0, 3)]
                   repeat(count) {
-                      if (fireflies.size < 22) {
+                      if (fireflies.size < 20) {
                           val ang = Random.nextFloat() * PI.toFloat() * 2f
-                          val spd = 0.25f + Random.nextFloat() * 0.75f
-                          fireflies.add(Firefly(cx + (Random.nextFloat() - 0.5f) * 20f, cy + (Random.nextFloat() - 0.5f) * 20f, cos(ang) * spd, sin(ang) * spd - 0.35f, 1.8f + Random.nextFloat() * 1.8f, 0.9f, char.accentColor))
+                          val spd = 0.25f + Random.nextFloat() * 0.7f
+                          fireflies.add(Firefly(cx + (Random.nextFloat() - 0.5f) * 20f, cy + (Random.nextFloat() - 0.5f) * 20f, cos(ang) * spd, sin(ang) * spd - 0.35f, 1.8f + Random.nextFloat() * 1.6f, 0.9f, char.accentColor))
                       }
                   }
               }
 
               fun triggerShowstopperTrick(cycleNext: Boolean = false) {
-                  val actions = listOf(
-                      NaturalAction.HAPPY_WAVE,
-                      NaturalAction.CURIOUS_TILT,
-                      NaturalAction.PLAYFUL_SWING,
-                      NaturalAction.STRETCH_YAWN,
-                      NaturalAction.ONE_HAND_DANGLE,
-                      NaturalAction.COZY_DOZE
-                  )
-                  currentAction = if (cycleNext) {
-                      val a = actions[actionCycleIdx % actions.size]
-                      actionCycleIdx++
-                      a
-                  } else {
-                      actions.random()
-                  }
-                  actionTimer = 0f
-                  bodySquashVel = 2.2f
-                  ropeStretchVel = 2.0f
-                  if (currentAction == NaturalAction.PLAYFUL_SWING) {
-                      ropeAngVel += if (ropeAngle >= 0f) 0.026f else -0.026f
-                  }
+                  val actions = listOf(NaturalAction.HAPPY_WAVE, NaturalAction.CURIOUS_TILT, NaturalAction.PLAYFUL_SWING, NaturalAction.STRETCH_YAWN, NaturalAction.ONE_HAND_DANGLE, NaturalAction.COZY_DOZE)
+                  currentAction = if (cycleNext) actions[actionCycleIdx++ % actions.size] else actions.random()
+                  actionTimer = 0f; bodySquashVel = 2.2f; ropeStretchVel = 2.0f
+                  if (currentAction == NaturalAction.PLAYFUL_SWING) ropeAngVel += if (ropeAngle >= 0f) 0.025f else -0.025f
                   spawnSoftFireflies(lastCharXDp, lastCharYDp - 32f, 7)
                   startLoop()
               }
 
               fun onCharacterSingleTap() {
-                  if (state == State.INSIDE || state == State.RETRACT_ROPE) {
-                      deployCompanion(true)
-                  } else {
-                      hangOutTimer = max(hangOutTimer, bubbleDisplaySec + 10)
+                  if (state == State.INSIDE || state == State.RETRACT_ROPE) deployCompanion(true)
+                  else {
+                      hangOutTimer = max(hangOutTimer, bubbleDisplaySec + 8)
                       triggerShowstopperTrick(cycleNext = true)
                       if (quotesEnabled) speakWisdom("random") else currentWisdom = null
                   }
@@ -491,33 +431,24 @@ jobs:
               fun deployCompanion(advance: Boolean = false) {
                   if (isLandscapePaused) return
                   if (advance) activeCharIdx = if (charMode == "rotate") (activeCharIdx + 1) % 4 else (charMode.toIntOrNull() ?: 0)
-                  state = State.PEEKABOO
-                  peekProgress = 0f
-                  ropeExtend = 0.02f; ropeExtendVel = 0.032f; slidePos = 0f; slideVel = 0f
-                  hangOutTimer = max(28, bubbleDisplaySec + 8)
+                  state = State.PEEKABOO; peekProgress = 0f; ropeExtend = 0.02f; ropeExtendVel = 0.032f; slidePos = 0f; slideVel = 0f
+                  hangOutTimer = max(24, bubbleDisplaySec + 6)
                   lastSecondTickMs = SystemClock.elapsedRealtime()
                   onStateChanged?.invoke(true)
                   startLoop()
               }
 
               fun retractCompanion() {
-                  currentWisdom = null
-                  currentAction = NaturalAction.CALM_PERCH
-                  state = State.CLIMB_UP
-                  slideVel = 0f
-                  visitCountdown = visitIntervalSec
-                  lastSecondTickMs = SystemClock.elapsedRealtime()
-                  startLoop()
+                  currentWisdom = null; currentAction = NaturalAction.CALM_PERCH; state = State.CLIMB_UP; slideVel = 0f
+                  visitCountdown = visitIntervalSec; lastSecondTickMs = SystemClock.elapsedRealtime(); startLoop()
               }
 
-              fun toggleCompanion() {
-                  if (state == State.INSIDE || state == State.RETRACT_ROPE) deployCompanion(true) else retractCompanion()
-              }
+              fun toggleCompanion() { if (state == State.INSIDE || state == State.RETRACT_ROPE) deployCompanion(true) else retractCompanion() }
 
               fun rebuildBubbleLayouts() {
                   if (!quotesEnabled) { currentWisdom = null; return }
                   val item = currentWisdom ?: return
-                  val maxW = (min(width.takeIf { it > 0 } ?: resources.displayMetrics.widthPixels, (310 * density).toInt()) - (36 * density).toInt()).coerceAtLeast((200 * density).toInt())
+                  val maxW = (260 * density).toInt()
                   titlePaint.textSize = (textSizeSp + 1f) * density
                   bodyPaint.textSize = textSizeSp * density
                   cachedTitleLayout = item.title?.takeIf { it.isNotBlank() }?.let {
@@ -534,7 +465,7 @@ jobs:
                   currentWisdom = WisdomRepository.getWisdom(category)
                   bubbleDurationMs = bubbleDisplaySec * 1000L
                   bubbleStartMs = SystemClock.elapsedRealtime()
-                  hangOutTimer = max(hangOutTimer, bubbleDisplaySec + 6)
+                  hangOutTimer = max(hangOutTimer, bubbleDisplaySec + 5)
                   rebuildBubbleLayouts()
                   startLoop()
                   invalidate()
@@ -542,16 +473,13 @@ jobs:
 
               private fun updatePhysics() {
                   simTime += 0.016f
-
                   when (state) {
                       State.PEEKABOO -> {
-                          peekProgress += 0.014f
+                          peekProgress += 0.015f
                           targetGazeX = sin(peekProgress * 5.5f) * 2.8f
                           gazeX += (targetGazeX - gazeX) * 0.15f
                           headLookLagX += (gazeX - headLookLagX) * 0.08f
-                          if (peekProgress >= 1.0f) {
-                              state = State.DROP_ROPE
-                          }
+                          if (peekProgress >= 1.0f) state = State.DROP_ROPE
                       }
                       State.DROP_ROPE -> {
                           ropeExtendVel += 0.0042f; ropeExtend += ropeExtendVel
@@ -563,8 +491,7 @@ jobs:
                           if (slidePos >= 0.995f) {
                               slidePos = 1f; state = State.PERCHED; bodySquashVel = 3.2f; ropeStretchVel = 3.6f; ropeAngVel += 0.014f
                               spawnSoftFireflies(lastCharXDp, lastCharYDp - 24f, 6)
-                              currentAction = NaturalAction.HAPPY_WAVE
-                              actionTimer = 0f
+                              currentAction = NaturalAction.HAPPY_WAVE; actionTimer = 0f
                               if (quotesEnabled) postDelayed({ if (state == State.PERCHED && quotesEnabled) speakWisdom("random") }, 350L)
                           }
                       }
@@ -580,7 +507,6 @@ jobs:
                   }
                   if (state == State.INSIDE) return
 
-                  // Smooth organic blending of natural actions
                   val isPerched = state == State.PERCHED
                   waveBlend += ((if (isPerched && currentAction == NaturalAction.HAPPY_WAVE) 1f else 0f) - waveBlend) * 0.09f
                   curiousBlend += ((if (isPerched && currentAction == NaturalAction.CURIOUS_TILT) 1f else 0f) - curiousBlend) * 0.08f
@@ -599,13 +525,8 @@ jobs:
                       }
                       if (currentAction != NaturalAction.CALM_PERCH) {
                           actionTimer += 0.016f
-                          if (currentAction == NaturalAction.PLAYFUL_SWING) {
-                              ropeAngVel += cos(simTime * 3.8f) * 0.0011f
-                          }
-                          if (actionTimer >= 4.2f) {
-                              currentAction = NaturalAction.CALM_PERCH
-                              actionTimer = 0f
-                          }
+                          if (currentAction == NaturalAction.PLAYFUL_SWING) ropeAngVel += cos(simTime * 3.8f) * 0.0011f
+                          if (actionTimer >= 4.2f) { currentAction = NaturalAction.CALM_PERCH; actionTimer = 0f }
                       } else if (--nextActionDelay <= 0) {
                           nextActionDelay = 140 + Random.nextInt(140)
                           triggerShowstopperTrick(cycleNext = false)
@@ -615,9 +536,7 @@ jobs:
                   val fit = fireflies.iterator()
                   while (fit.hasNext()) {
                       val f = fit.next()
-                      f.x += f.vx + sin(simTime * 2f + f.y * 0.1f) * 0.12f
-                      f.y += f.vy
-                      f.alpha -= 0.012f
+                      f.x += f.vx + sin(simTime * 2f + f.y * 0.1f) * 0.12f; f.y += f.vy; f.alpha -= 0.012f
                       if (f.alpha <= 0f) fit.remove()
                   }
 
@@ -649,7 +568,6 @@ jobs:
                       if (blinkTimer < -5) blinkTimer = 95 + Random.nextInt(140)
                   } else blinkAmount = max(0f, blinkAmount - 0.32f)
 
-                  // Natural saccadic eye movement: eyes dart first, head follows smoothly
                   if (--gazeTimer <= 0 && state != State.PEEKABOO) {
                       targetGazeX = (Random.nextFloat() - 0.5f) * 3.2f
                       targetGazeY = (Random.nextFloat() - 0.5f) * 1.2f
@@ -664,7 +582,8 @@ jobs:
                   super.onDraw(canvas)
                   if (isLandscapePaused) return
 
-                  val widthDp = width / density; val heightDp = height / density
+                  val widthDp = width / density
+                  val screenHeightDp = resources.displayMetrics.heightPixels / density
                   val anchorX = widthDp / 2f + camLeftOffsetDp; val anchorY = camTopOffsetDp + 16f
                   val char = CharType.values()[activeCharIdx.coerceIn(0, 3)]
 
@@ -679,22 +598,21 @@ jobs:
 
                   if (state == State.INSIDE) { canvas.restore(); return }
 
-                  // Natural Peek-a-Boo Entrance: Little paws grip the camera edge, head peeks out!
                   if (state == State.PEEKABOO) {
                       val smoothPeek = sin(peekProgress.coerceIn(0f, 1f) * PI.toFloat() * 0.85f)
                       val headRise = smoothPeek * 17f
                       drawCharacterHead(canvas, char, anchorX + headLookLagX * 0.8f, anchorY + 4f + headRise, headLookLagX * 0.05f, false, false)
-                      // Draw two cute paws gripping the bottom edge of the camera cutout
                       paint.style = Paint.Style.FILL; paint.color = char.limbColor
                       canvas.drawOval(anchorX - 13f, anchorY + 8f, anchorX - 6f, anchorY + 13f, paint)
                       canvas.drawOval(anchorX + 6f, anchorY + 8f, anchorX + 13f, anchorY + 13f, paint)
                       canvas.drawOval(anchorX - 13f, anchorY + 8f, anchorX - 6f, anchorY + 13f, rimPaint)
                       canvas.drawOval(anchorX + 6f, anchorY + 8f, anchorX + 13f, anchorY + 13f, rimPaint)
+                      onCharacterBoundsUpdated?.invoke(0f, anchorY, false, false)
                       canvas.restore()
                       return
                   }
 
-                  val maxRopeLen = min(heightDp * targetRopeRatio, 230f)
+                  val maxRopeLen = min(screenHeightDp * targetRopeRatio, 165f)
                   val currentRopeLen = maxRopeLen * ropeExtend + ropeStretch
                   val sinA = sin(ropeAngle); val cosA = cos(ropeAngle)
                   val knotX = anchorX + sinA * currentRopeLen; val knotY = anchorY + cosA * currentRopeLen
@@ -706,19 +624,17 @@ jobs:
                   if (state == State.SLIDE_DOWN || state == State.PERCHED || state == State.CLIMB_UP) {
                       val t = slidePos; val invT = 1f - t
                       val charX = invT * invT * anchorX + 2f * invT * t * midX + t * t * knotX
-                      val charY = invT * invT * anchorY + 2f * invT * t * midY + t * t * knotY + dangleBlend * 22f
+                      val charY = invT * invT * anchorY + 2f * invT * t * midY + t * t * knotY + dangleBlend * 18f
 
                       lastCharXDp = charX; lastCharYDp = charY
-                      onCharacterBoundsUpdated?.invoke(charX - widthDp / 2f, charY - 32f, state == State.PERCHED)
+                      val bubbleShowing = hasActiveBubble()
+                      onCharacterBoundsUpdated?.invoke(charX - widthDp / 2f, charY - 32f, state == State.PERCHED, bubbleShowing)
 
-                      // Soft glowing firefly aura particles
                       paint.style = Paint.Style.FILL
                       for (f in fireflies) {
-                          paint.color = f.color
-                          paint.alpha = (f.alpha * 90).toInt().coerceIn(0, 255)
+                          paint.color = f.color; paint.alpha = (f.alpha * 90).toInt().coerceIn(0, 255)
                           canvas.drawCircle(f.x, f.y, f.radius * 2.1f, paint)
-                          paint.color = Color.WHITE
-                          paint.alpha = (f.alpha * 220).toInt().coerceIn(0, 255)
+                          paint.color = Color.WHITE; paint.alpha = (f.alpha * 220).toInt().coerceIn(0, 255)
                           canvas.drawCircle(f.x, f.y, f.radius * 0.7f, paint)
                       }
                       paint.alpha = 255
@@ -733,9 +649,9 @@ jobs:
                       }
 
                       canvas.restore()
-                      if (quotesEnabled) drawSpeechBubbleBelowCharacter(canvas, char, charX * density, (knotY + 34f) * density)
+                      if (bubbleShowing) drawSpeechBubbleBelowCharacter(canvas, char, charX * density, (knotY + 30f) * density)
                   } else {
-                      onCharacterBoundsUpdated?.invoke(0f, 0f, false)
+                      onCharacterBoundsUpdated?.invoke(0f, 0f, false, false)
                       canvas.restore()
                   }
               }
@@ -809,7 +725,6 @@ jobs:
                   val rHandX = 0f
                   val rHandY = lerp(-52f - climbArmOffset, -25f)
 
-                  // Smoothly blended Left Arm (Perch -> Wave -> Stretch Overhead)
                   val waveArc = sin(simTime * 11f) * 8.5f * waveBlend
                   val baseLElbowX = -23f + balanceLean * 0.5f - waveBlend * 5f - stretchBlend * 3f
                   val baseLElbowY = -33f + squash * 0.6f + breathe - waveBlend * 16f - stretchBlend * 22f
@@ -821,7 +736,6 @@ jobs:
                   val lHandX = lerp(if (state == State.PERCHED) baseLHandX else 0f, -2f + handGrabEffort * 0.4f)
                   val lHandY = lerp(if (state == State.PERCHED) baseLHandY else -36f + climbArmOffset, -17f + handGrabEffort)
 
-                  // Asynchronous natural foot kicking
                   val gentleKickR = sin(simTime * 2.9f) * 2.8f
                   val gentleKickL = sin(simTime * 2.9f + 1.8f) * 3.8f
                   val rKneeX = lerp(-5f, kneeLag + 3f)
@@ -886,9 +800,7 @@ jobs:
                   path.quadTo(mx + nx * mw * 0.5f, my + ny * mw * 0.5f, x2 + nx * w2 * 0.5f, y2 + ny * w2 * 0.5f)
                   path.lineTo(x2 - nx * w2 * 0.5f, y2 - ny * w2 * 0.5f)
                   path.quadTo(mx - nx * mw * 0.5f, my - ny * mw * 0.5f, x1 - nx * w1 * 0.5f, y1 - ny * w1 * 0.5f)
-                  path.close()
-                  canvas.drawPath(path, paint)
-                  canvas.drawPath(path, rimPaint)
+                  path.close(); canvas.drawPath(path, paint); canvas.drawPath(path, rimPaint)
               }
 
               private fun drawNinjaFoot(canvas: Canvas, ax: Float, ay: Float, tx: Float, ty: Float, color: Int) {
@@ -896,8 +808,7 @@ jobs:
                   path.reset(); path.moveTo(ax - 3.5f, ay); path.lineTo(ax + 3.5f, ay - 2f)
                   path.quadTo((ax + tx) * 0.5f + 2f, (ay + ty) * 0.5f - 3f, tx, ty)
                   path.quadTo((ax + tx) * 0.5f, ty + 3.5f, ax - 4f, ay + 3.5f); path.close()
-                  canvas.drawPath(path, paint)
-                  canvas.drawPath(path, rimPaint)
+                  canvas.drawPath(path, paint); canvas.drawPath(path, rimPaint)
               }
 
               private fun drawCharacterTorso(canvas: Canvas, char: CharType, hipX: Float, hipY: Float, shoulderX: Float, shoulderY: Float) {
@@ -929,14 +840,11 @@ jobs:
                       CharType.BOT -> {}
                   }
 
-                  // 3D Shaded Torso with Rim Light
                   paint.style = Paint.Style.FILL
                   paint.shader = LinearGradient(-8f, -tLen, 8f, 4f, char.topColor, char.bottomColor, Shader.TileMode.CLAMP)
                   path.reset(); path.moveTo(-6.8f, 2f); path.quadTo(-8.8f, -tLen * 0.5f, -9.8f, -tLen + 2f)
                   path.quadTo(0f, -tLen - 4.5f, 8.8f, -tLen + 2f); path.quadTo(7.8f, -tLen * 0.45f, 5.8f, 2f); path.quadTo(0f, 6.2f, -6.8f, 2f); path.close()
-                  canvas.drawPath(path, paint)
-                  paint.shader = null
-                  canvas.drawPath(path, rimPaint)
+                  canvas.drawPath(path, paint); paint.shader = null; canvas.drawPath(path, rimPaint)
 
                   when (char) {
                       CharType.BOT -> {
@@ -965,29 +873,20 @@ jobs:
                   val ex = 2.8f + gazeX * 0.75f; val ey = 2.0f + gazeY * 0.5f
                   val eyeOpen = if (dozeBlend > 0.5f) 0.12f else (1.0f - blinkAmount).coerceAtLeast(0.08f)
 
-                  // Soft Ambient Occlusion Neck Shadow
                   paint.style = Paint.Style.FILL; paint.color = Color.argb(95, 0, 0, 0)
                   canvas.drawOval(-6f, 9f, 6f, 15f, paint)
-
-                  // 3D Spherical Radial Shading for the Head
                   val headShader = RadialGradient(-4.5f, -5.5f, 18f, char.topColor, char.bottomColor, Shader.TileMode.CLAMP)
 
                   when (char) {
                       CharType.NINJA -> {
-                          paint.shader = headShader
-                          canvas.drawCircle(0f, 0f, 13.2f, paint)
-                          paint.shader = null
+                          paint.shader = headShader; canvas.drawCircle(0f, 0f, 13.2f, paint); paint.shader = null
                           canvas.drawCircle(0f, 0f, 13.2f, rimPaint)
-
-                          // ForeheadBand & Metallic Shinobi Plate
                           paint.color = Color.parseColor("#E11D48")
                           path.reset(); path.moveTo(-12.9f, -4.8f); path.quadTo(1f, -7.0f, 12.9f, -3.8f); path.lineTo(13.1f, 1.0f); path.quadTo(1f, -1.8f, -13.1f, 0.4f); path.close(); canvas.drawPath(path, paint)
                           paint.color = Color.parseColor("#CBD5E1"); rectF.set(-3.5f, -5.2f, 6.5f, -1.5f); canvas.drawRoundRect(rectF, 1.5f, 1.5f, paint)
                           paint.color = Color.WHITE; canvas.drawCircle(-1.2f, -3.5f, 0.9f, paint)
-
-                          if (happyEyes) {
-                              drawHappyArcEyes(canvas, ex, ey, Color.WHITE)
-                          } else {
+                          if (happyEyes) drawHappyArcEyes(canvas, ex, ey, Color.WHITE)
+                          else {
                               drawStudioEye(canvas, ex - 4.0f, ey, 2.7f, 2.9f * eyeOpen, Color.parseColor("#38BDF8"), Color.WHITE, isSlipping)
                               drawStudioEye(canvas, ex + 4.0f, ey, 2.7f, 2.9f * eyeOpen, Color.parseColor("#38BDF8"), Color.WHITE, isSlipping)
                           }
@@ -1003,19 +902,15 @@ jobs:
 
                           paint.shader = headShader; rectF.set(-13.8f, -12.4f, 13.8f, 12.4f); canvas.drawOval(rectF, paint); paint.shader = null
                           canvas.drawOval(rectF, rimPaint)
-
-                          // Rosy cheeks & pink nose
                           paint.color = Color.argb(85, 244, 63, 94)
                           canvas.drawOval(ex - 9.5f, ey + 2.5f, ex - 4.5f, ey + 5.2f, paint)
                           canvas.drawOval(ex + 4.5f, ey + 2.5f, ex + 9.5f, ey + 5.2f, paint)
-                          paint.color = Color.parseColor("#FB7185")
-                          canvas.drawCircle(ex, ey + 3.8f, 1.4f, paint)
+                          paint.color = Color.parseColor("#FB7185"); canvas.drawCircle(ex, ey + 3.8f, 1.4f, paint)
 
-                          if (happyEyes) {
-                              drawHappyArcEyes(canvas, ex, ey, Color.parseColor("#FDE047"))
-                          } else {
-                              drawStudioEye(canvas, ex - 4.3f, ey, 3.3f, 3.7f * eyeOpen, Color.parseColor("#F59E0B"), Color.parseColor("#FEF08A"), isSlipping, slitPupil = true)
-                              drawStudioEye(canvas, ex + 4.3f, ey, 3.3f, 3.7f * eyeOpen, Color.parseColor("#F59E0B"), Color.parseColor("#FEF08A"), isSlipping, slitPupil = true)
+                          if (happyEyes) drawHappyArcEyes(canvas, ex, ey, Color.parseColor("#FDE047"))
+                          else {
+                              drawStudioEye(canvas, ex - 4.3f, ey, 3.3f, 3.7f * eyeOpen, Color.parseColor("#F59E0B"), Color.parseColor("#FEF08A"), isSlipping, true)
+                              drawStudioEye(canvas, ex + 4.3f, ey, 3.3f, 3.7f * eyeOpen, Color.parseColor("#F59E0B"), Color.parseColor("#FEF08A"), isSlipping, true)
                           }
                       }
                       CharType.BOT -> {
@@ -1026,15 +921,12 @@ jobs:
 
                           paint.shader = headShader; rectF.set(-14f, -12.2f, 14f, 11.5f); canvas.drawRoundRect(rectF, 11.5f, 11.5f, paint); paint.shader = null
                           canvas.drawRoundRect(rectF, 11.5f, 11.5f, rimPaint)
-
-                          // Glass OLED Visor
                           paint.color = Color.parseColor("#090D16"); rectF.set(-11f, -8f, 12f, 7.2f); canvas.drawRoundRect(rectF, 7.5f, 7.5f, paint)
                           paint.color = Color.argb(45, 255, 255, 255)
                           path.reset(); path.moveTo(-9f, -6.5f); path.quadTo(0f, -7.2f, 9f, -5.5f); path.lineTo(6f, -2f); path.quadTo(-2f, -3f, -9f, -2.5f); path.close(); canvas.drawPath(path, paint)
 
-                          if (happyEyes) {
-                              drawHappyArcEyes(canvas, ex, ey - 0.5f, Color.parseColor("#22D3EE"))
-                          } else {
+                          if (happyEyes) drawHappyArcEyes(canvas, ex, ey - 0.5f, Color.parseColor("#22D3EE"))
+                          else {
                               paint.color = Color.parseColor("#22D3EE")
                               rectF.set(ex - 6.6f, ey - 0.5f - 3.2f * eyeOpen, ex - 1.6f, ey - 0.5f + 3.2f * eyeOpen); canvas.drawRoundRect(rectF, 3f, 3f, paint)
                               rectF.set(ex + 1.6f, ey - 0.5f - 3.2f * eyeOpen, ex + 6.6f, ey - 0.5f + 3.2f * eyeOpen); canvas.drawRoundRect(rectF, 3f, 3f, paint)
@@ -1054,7 +946,6 @@ jobs:
 
                           paint.shader = headShader; canvas.drawCircle(0f, 0f, 13.2f, paint); paint.shader = null
                           canvas.drawCircle(0f, 0f, 13.2f, rimPaint)
-
                           paint.color = Color.parseColor("#FFFBEB")
                           rectF.set(-12.8f, -0.5f, 0.5f, 10.0f); canvas.drawOval(rectF, paint)
                           rectF.set(-0.5f, -0.5f, 12.8f, 10.0f); canvas.drawOval(rectF, paint)
@@ -1062,9 +953,8 @@ jobs:
                           canvas.drawOval(ex - 9.5f, ey + 2.5f, ex - 4.5f, ey + 5.2f, paint)
                           canvas.drawOval(ex + 4.5f, ey + 2.5f, ex + 9.5f, ey + 5.2f, paint)
 
-                          if (happyEyes) {
-                              drawHappyArcEyes(canvas, ex, ey - 0.5f, Color.parseColor("#FEF08A"))
-                          } else {
+                          if (happyEyes) drawHappyArcEyes(canvas, ex, ey - 0.5f, Color.parseColor("#FEF08A"))
+                          else {
                               drawStudioEye(canvas, ex - 4.1f, ey - 0.3f, 3.0f, 3.2f * eyeOpen, Color.parseColor("#EA580C"), Color.parseColor("#FEF08A"), isSlipping)
                               drawStudioEye(canvas, ex + 4.1f, ey - 0.3f, 3.0f, 3.2f * eyeOpen, Color.parseColor("#EA580C"), Color.parseColor("#FEF08A"), isSlipping)
                           }
@@ -1073,33 +963,16 @@ jobs:
                   canvas.restore()
               }
 
-              private fun drawStudioEye(
-                  canvas: Canvas, cx: Float, cy: Float, rx: Float, ry: Float,
-                  irisColor: Int, glowColor: Int, isSurprised: Boolean, slitPupil: Boolean = false
-              ) {
-                  // Outer eye base
-                  paint.style = Paint.Style.FILL
-                  paint.color = glowColor
-                  rectF.set(cx - rx, cy - ry, cx + rx, cy + ry)
-                  canvas.drawOval(rectF, paint)
-
+              private fun drawStudioEye(canvas: Canvas, cx: Float, cy: Float, rx: Float, ry: Float, irisColor: Int, glowColor: Int, isSurprised: Boolean, slitPupil: Boolean = false) {
+                  paint.style = Paint.Style.FILL; paint.color = glowColor
+                  rectF.set(cx - rx, cy - ry, cx + rx, cy + ry); canvas.drawOval(rectF, paint)
                   if (ry > 0.9f) {
-                      // Rich Iris
                       paint.color = irisColor
-                      val irx = rx * 0.72f; val iry = ry * 0.75f
-                      rectF.set(cx - irx, cy - iry, cx + irx, cy + iry)
-                      canvas.drawOval(rectF, paint)
-
-                      // Deep Pupil
+                      rectF.set(cx - rx * 0.72f, cy - ry * 0.75f, cx + rx * 0.72f, cy + ry * 0.75f); canvas.drawOval(rectF, paint)
                       paint.color = Color.parseColor("#090B10")
                       if (slitPupil && !isSurprised) {
-                          rectF.set(cx - rx * 0.22f, cy - ry * 0.65f, cx + rx * 0.22f, cy + ry * 0.65f)
-                          canvas.drawOval(rectF, paint)
-                      } else {
-                          canvas.drawCircle(cx, cy, min(rx, ry) * 0.42f, paint)
-                      }
-
-                      // Dual Studio Catchlight Sparkles
+                          rectF.set(cx - rx * 0.22f, cy - ry * 0.65f, cx + rx * 0.22f, cy + ry * 0.65f); canvas.drawOval(rectF, paint)
+                      } else canvas.drawCircle(cx, cy, min(rx, ry) * 0.42f, paint)
                       paint.color = Color.WHITE
                       canvas.drawCircle(cx - rx * 0.32f, cy - ry * 0.32f, max(0.85f, rx * 0.28f), paint)
                       canvas.drawCircle(cx + rx * 0.25f, cy + ry * 0.25f, max(0.5f, rx * 0.15f), paint)
@@ -1150,46 +1023,46 @@ jobs:
                   if (elapsed >= bubbleDurationMs) { currentWisdom = null; return }
 
                   val progress = (1f - elapsed.toFloat() / bubbleDurationMs).coerceIn(0f, 1f)
-                  val padH = 16f * density; val padV = 14f * density; val headerH = 22f * density
-                  val titleH = (cachedTitleLayout?.height?.toFloat() ?: 0f) + if (cachedTitleLayout != null) 6f * density else 0f
-                  val footerH = 20f * density
+                  val padH = 14f * density; val padV = 12f * density; val headerH = 20f * density
+                  val titleH = (cachedTitleLayout?.height?.toFloat() ?: 0f) + if (cachedTitleLayout != null) 5f * density else 0f
+                  val footerH = 18f * density
 
                   val boxW = bodyLayout.width + padH * 2f
                   val boxH = padV * 2f + headerH + titleH + bodyLayout.height + footerH
-                  val leftX = (charXPx - boxW / 2f).coerceIn(10f * density, (width - boxW - 10f * density).coerceAtLeast(10f * density))
-                  val topY = topYPx.coerceAtLeast(95f * density)
+                  val leftX = (charXPx - boxW / 2f).coerceIn(8f * density, (width - boxW - 8f * density).coerceAtLeast(8f * density))
+                  val topY = topYPx.coerceAtLeast(85f * density)
                   val bottomY = topY + boxH
 
-                  val pointerX = charXPx.coerceIn(leftX + 24f * density, leftX + boxW - 24f * density)
+                  val pointerX = charXPx.coerceIn(leftX + 22f * density, leftX + boxW - 22f * density)
                   paint.style = Paint.Style.FILL; paint.color = Color.parseColor("#F20F172A")
-                  path.reset(); path.moveTo(pointerX - 10f * density, topY + 1f); path.lineTo(pointerX, topY - 10f * density); path.lineTo(pointerX + 10f * density, topY + 1f); path.close(); canvas.drawPath(path, paint)
+                  path.reset(); path.moveTo(pointerX - 9f * density, topY + 1f); path.lineTo(pointerX, topY - 9f * density); path.lineTo(pointerX + 9f * density, topY + 1f); path.close(); canvas.drawPath(path, paint)
 
                   paint.color = Color.argb(110, 0, 0, 0)
-                  rectF.set(leftX, topY + 5f * density, leftX + boxW, bottomY + 5f * density); canvas.drawRoundRect(rectF, 18f * density, 18f * density, paint)
+                  rectF.set(leftX, topY + 4f * density, leftX + boxW, bottomY + 4f * density); canvas.drawRoundRect(rectF, 16f * density, 16f * density, paint)
 
                   paint.color = Color.parseColor("#F20F172A")
-                  rectF.set(leftX, topY, leftX + boxW, bottomY); canvas.drawRoundRect(rectF, 18f * density, 18f * density, paint)
+                  rectF.set(leftX, topY, leftX + boxW, bottomY); canvas.drawRoundRect(rectF, 16f * density, 16f * density, paint)
 
                   paint.style = Paint.Style.STROKE; paint.strokeWidth = 1.5f * density; paint.color = char.accentColor
-                  canvas.drawRoundRect(rectF, 18f * density, 18f * density, paint)
+                  canvas.drawRoundRect(rectF, 16f * density, 16f * density, paint)
 
                   paint.style = Paint.Style.FILL; headerPaint.color = char.accentColor
-                  canvas.drawText(char.displayName, leftX + padH, topY + padV + 11f * density, headerPaint)
+                  canvas.drawText(char.displayName, leftX + padH, topY + padV + 10f * density, headerPaint)
 
                   headerPaint.color = Color.parseColor("#CBD5E1")
                   val catW = headerPaint.measureText(wisdom.categoryBadge)
-                  canvas.drawText(wisdom.categoryBadge, leftX + boxW - padH - catW, topY + padV + 11f * density, headerPaint)
+                  canvas.drawText(wisdom.categoryBadge, leftX + boxW - padH - catW, topY + padV + 10f * density, headerPaint)
 
                   var cursorY = topY + padV + headerH
                   cachedTitleLayout?.let { tLayout ->
                       canvas.save(); canvas.translate(leftX + padH, cursorY); titlePaint.color = char.accentColor; tLayout.draw(canvas); canvas.restore()
-                      cursorY += tLayout.height + 6f * density
+                      cursorY += tLayout.height + 5f * density
                   }
                   canvas.save(); canvas.translate(leftX + padH, cursorY); bodyLayout.draw(canvas); canvas.restore()
 
-                  canvas.drawText("Tap friend: Action ✨  •  Double-tap: Hide", leftX + padH, bottomY - 10f * density, hintPaint)
+                  canvas.drawText("Tap friend: Action ✨  •  Double-tap: Hide", leftX + padH, bottomY - 9f * density, hintPaint)
                   paint.color = char.accentColor
-                  rectF.set(leftX + padH, bottomY - 4.5f * density, leftX + padH + (boxW - padH * 2f) * progress, bottomY - 1.5f * density)
+                  rectF.set(leftX + padH, bottomY - 4f * density, leftX + padH + (boxW - padH * 2f) * progress, bottomY - 1.5f * density)
                   canvas.drawRoundRect(rectF, 2f * density, 2f * density, paint)
               }
 
@@ -1198,31 +1071,12 @@ jobs:
                   return gestureDetector.onTouchEvent(event) || super.onTouchEvent(event)
               }
           }
-          EOF
-
-          cat << 'EOF' > app/src/main/java/com/companion/punchhole/OverlayService.kt
-          package com.companion.punchhole
-
-          import android.app.*
-          import android.content.*
-          import android.content.pm.ServiceInfo
-          import android.content.res.Configuration
-          import android.graphics.Color
-          import android.graphics.PixelFormat
-          import android.hardware.*
-          import android.os.Build
-          import android.os.IBinder
-          import android.view.*
-          import kotlin.math.abs
-          import kotlin.math.roundToInt
 
           class OverlayService : Service(), SensorEventListener, SharedPreferences.OnSharedPreferenceChangeListener {
-
               companion object {
                   var isRunning = false
                   const val PREFS_NAME = "PunchHoleNativePrefs"
               }
-
               private lateinit var windowManager: WindowManager
               private lateinit var prefs: SharedPreferences
               private var companionView: CompanionOverlayView? = null
@@ -1231,7 +1085,6 @@ jobs:
               private lateinit var punchHoleParams: WindowManager.LayoutParams
               private lateinit var charTouchParams: WindowManager.LayoutParams
               private var sensorManager: SensorManager? = null
-
               private var isScreenOn = true
               private var isCompanionOut = true
               private var isPortrait = true
@@ -1253,30 +1106,64 @@ jobs:
                   prefs.edit().putBoolean("overlay_running", true).apply()
                   prefs.registerOnSharedPreferenceChangeListener(this)
                   startOverlayForeground()
-
-                  registerReceiver(screenReceiver, IntentFilter().apply { addAction(Intent.ACTION_SCREEN_OFF); addAction(Intent.ACTION_SCREEN_ON) })
+                  registerReceiver(screenReceiver, IntentFilter().apply {
+                      addAction(Intent.ACTION_SCREEN_OFF)
+                      addAction(Intent.ACTION_SCREEN_ON)
+                  })
                   windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
                   sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
                   isPortrait = resources.configuration.orientation != Configuration.ORIENTATION_LANDSCAPE
 
-                  val dm = resources.displayMetrics; val density = dm.density
-                  val layoutType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY else @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE
+                  val dm = resources.displayMetrics
+                  val density = dm.density
+                  val layoutType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                      WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+                  else
+                      @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE
 
+                  // 1. Visual Layer: Always 100% click-through (FLAG_NOT_TOUCHABLE)
                   val visualParams = WindowManager.LayoutParams(
-                      minOf(dm.widthPixels, (360 * density).toInt()), (620 * density).toInt(), layoutType,
-                      WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                      minOf(dm.widthPixels, (340 * density).toInt()),
+                      (480 * density).toInt(),
+                      layoutType,
+                      WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                              WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+                              WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                              WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
                       PixelFormat.TRANSLUCENT
-                  ).apply { gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL; applyCutoutFlag(this) }
+                  ).apply {
+                      gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+                      applyCutoutFlag(this)
+                  }
 
+                  // 2. Character Hitbox: Starts untouchable (0x0) until character is actually perched
                   charTouchParams = WindowManager.LayoutParams(
-                      (92 * density).toInt(), (105 * density).toInt(), layoutType,
-                      WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                      0,
+                      0,
+                      layoutType,
+                      WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                              WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+                              WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                              WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH or
+                              WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                              WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
                       PixelFormat.TRANSLUCENT
-                  ).apply { gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL; x = 0; y = (110 * density).toInt(); applyCutoutFlag(this) }
+                  ).apply {
+                      gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+                      x = 0
+                      y = (90 * density).toInt()
+                      applyCutoutFlag(this)
+                  }
 
+                  // 3. Tight Camera Hole Hitbox (44dp x 32dp strictly over physical camera lens)
                   punchHoleParams = WindowManager.LayoutParams(
-                      (64 * density).toInt(), (48 * density).toInt(), layoutType,
-                      WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                      (44 * density).toInt(),
+                      (32 * density).toInt(),
+                      layoutType,
+                      WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                              WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                              WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                              WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
                       PixelFormat.TRANSLUCENT
                   ).apply {
                       gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
@@ -1286,27 +1173,20 @@ jobs:
                   }
 
                   companionView = CompanionOverlayView(
-                      this, isSystemOverlay = true,
+                      this,
+                      isSystemOverlay = true,
                       onStateChanged = { out ->
                           isCompanionOut = out
                           updateSensorRegistration()
-                          characterTouchView?.post { characterTouchView?.visibility = if (out && isPortrait) View.VISIBLE else View.GONE }
+                          if (!out) setCharacterTouchEnabled(false, 0f, 0f)
                       },
-                      onCharacterBoundsUpdated = { offsetXDp, topYDp, active ->
-                          characterTouchView?.let { v ->
-                              val targetVis = if (active && isPortrait) View.VISIBLE else View.GONE
-                              if (v.visibility != targetVis) v.visibility = targetVis
-                              if (active && isPortrait) {
-                                  val newX = (offsetXDp * density).roundToInt()
-                                  val newY = (topYDp * density).roundToInt().coerceAtLeast((48 * density).toInt())
-                                  if (abs(charTouchParams.x - newX) > 6 || abs(charTouchParams.y - newY) > 6) {
-                                      charTouchParams.x = newX; charTouchParams.y = newY
-                                      try { windowManager.updateViewLayout(v, charTouchParams) } catch (_: Exception) {}
-                                  }
-                              }
-                          }
+                      onCharacterBoundsUpdated = { offsetXDp, topYDp, active, _ ->
+                          setCharacterTouchEnabled(active && isPortrait && isCompanionOut, offsetXDp, topYDp)
                       }
-                  ).also { view -> syncPreferencesToView(view); windowManager.addView(view, visualParams) }
+                  ).also { view ->
+                      syncPreferencesToView(view)
+                      windowManager.addView(view, visualParams)
+                  }
 
                   val charGesture = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
                       override fun onDown(e: MotionEvent): Boolean = true
@@ -1314,15 +1194,25 @@ jobs:
                       override fun onDoubleTap(e: MotionEvent): Boolean { companionView?.retractCompanion(); return true }
                       override fun onScroll(e1: MotionEvent?, e2: MotionEvent, dx: Float, dy: Float): Boolean { companionView?.applyHorizontalImpulse(-dx); return true }
                   })
+
                   characterTouchView = View(this).apply {
                       setBackgroundColor(Color.TRANSPARENT)
-                      setOnTouchListener { _, event -> charGesture.onTouchEvent(event) }
+                      visibility = View.GONE
+                      setOnTouchListener { _, event ->
+                          if (event.action == MotionEvent.ACTION_OUTSIDE) {
+                              companionView?.dismissBubble()
+                              false
+                          } else {
+                              charGesture.onTouchEvent(event)
+                          }
+                      }
                   }.also { windowManager.addView(it, charTouchParams) }
 
                   val holeGesture = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
                       override fun onDown(e: MotionEvent): Boolean = true
                       override fun onSingleTapUp(e: MotionEvent): Boolean { companionView?.toggleCompanion(); return true }
                   })
+
                   punchHoleTouchView = View(this).apply {
                       setBackgroundColor(Color.TRANSPARENT)
                       setOnTouchListener { _, event -> holeGesture.onTouchEvent(event) }
@@ -1331,9 +1221,42 @@ jobs:
                   updateSensorRegistration()
               }
 
+              private fun setCharacterTouchEnabled(enable: Boolean, offsetXDp: Float, topYDp: Float) {
+                  val v = characterTouchView ?: return
+                  val density = resources.displayMetrics.density
+                  if (!enable) {
+                      val wasTouchable = (charTouchParams.flags and WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE) == 0
+                      if (v.visibility != View.GONE || wasTouchable || charTouchParams.width != 0) {
+                          v.visibility = View.GONE
+                          charTouchParams.width = 0
+                          charTouchParams.height = 0
+                          charTouchParams.flags = charTouchParams.flags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+                          try { windowManager.updateViewLayout(v, charTouchParams) } catch (_: Exception) {}
+                      }
+                  } else {
+                      val targetW = (56 * density).toInt()
+                      val targetH = (64 * density).toInt()
+                      val newX = (offsetXDp * density).roundToInt()
+                      val newY = (topYDp * density).roundToInt().coerceAtLeast((36 * density).toInt())
+                      val wasUntouchable = (charTouchParams.flags and WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE) != 0
+                      if (v.visibility != View.VISIBLE || wasUntouchable || abs(charTouchParams.x - newX) > 6 || abs(charTouchParams.y - newY) > 6) {
+                          v.visibility = View.VISIBLE
+                          charTouchParams.width = targetW
+                          charTouchParams.height = targetH
+                          charTouchParams.x = newX
+                          charTouchParams.y = newY
+                          charTouchParams.flags = charTouchParams.flags and WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE.inv()
+                          try { windowManager.updateViewLayout(v, charTouchParams) } catch (_: Exception) {}
+                      }
+                  }
+              }
+
               private fun applyCutoutFlag(lp: WindowManager.LayoutParams) {
                   if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                      lp.layoutInDisplayCutoutMode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS else WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+                      lp.layoutInDisplayCutoutMode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+                          WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+                      else
+                          WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
                   }
               }
 
@@ -1344,9 +1267,9 @@ jobs:
                   view.visitIntervalSec = prefs.getInt("visit_sec", 120)
                   view.camTopOffsetDp = prefs.getInt("cam_y", 6).toFloat()
                   view.camLeftOffsetDp = prefs.getInt("cam_x", 0).toFloat()
-                  view.bubbleDisplaySec = prefs.getInt("read_sec", 9)
+                  view.bubbleDisplaySec = prefs.getInt("read_sec", 8)
                   view.textSizeSp = prefs.getInt("text_sp", 16)
-                  view.targetRopeRatio = prefs.getInt("rope_pct", 28) / 100f
+                  view.targetRopeRatio = prefs.getInt("rope_pct", 24) / 100f
                   view.fallAnimationEnabled = prefs.getBoolean("fall_on", true)
                   view.quotesEnabled = prefs.getBoolean("quotes_on", true)
                   view.rebuildBubbleLayouts()
@@ -1360,29 +1283,43 @@ jobs:
                   }
               }
 
-              override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) { companionView?.let { syncPreferencesToView(it) } }
+              override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
+                  companionView?.let { syncPreferencesToView(it) }
+              }
 
               private fun updateSensorRegistration() {
                   val sm = sensorManager ?: return
                   val shouldListen = isScreenOn && isCompanionOut && isPortrait
                   if (shouldListen && !sensorRegistered) {
-                      sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)?.let { sm.registerListener(this, it, SensorManager.SENSOR_DELAY_UI); sensorRegistered = true }
+                      sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)?.let {
+                          sm.registerListener(this, it, SensorManager.SENSOR_DELAY_UI)
+                          sensorRegistered = true
+                      }
                   } else if (!shouldListen && sensorRegistered) {
-                      sm.unregisterListener(this); sensorRegistered = false
+                      sm.unregisterListener(this)
+                      sensorRegistered = false
                   }
               }
 
               override fun onConfigurationChanged(newConfig: Configuration) {
                   super.onConfigurationChanged(newConfig)
                   isPortrait = newConfig.orientation != Configuration.ORIENTATION_LANDSCAPE
-                  companionView?.apply { isLandscapePaused = !isPortrait; visibility = if (isPortrait) View.VISIBLE else View.GONE; if (isPortrait) startLoop() }
+                  companionView?.apply {
+                      isLandscapePaused = !isPortrait
+                      visibility = if (isPortrait) View.VISIBLE else View.GONE
+                      if (isPortrait) startLoop()
+                  }
                   punchHoleTouchView?.visibility = if (isPortrait) View.VISIBLE else View.GONE
-                  characterTouchView?.visibility = if (isPortrait && isCompanionOut) View.VISIBLE else View.GONE
+                  if (!isPortrait) setCharacterTouchEnabled(false, 0f, 0f)
                   updateSensorRegistration()
               }
 
               override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-                  if (intent?.action == "STOP_OVERLAY") { prefs.edit().putBoolean("overlay_running", false).apply(); stopSelf(); return START_NOT_STICKY }
+                  if (intent?.action == "STOP_OVERLAY") {
+                      prefs.edit().putBoolean("overlay_running", false).apply()
+                      stopSelf()
+                      return START_NOT_STICKY
+                  }
                   return START_STICKY
               }
 
@@ -1397,7 +1334,7 @@ jobs:
                   val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) Notification.Builder(this, channelId) else @Suppress("DEPRECATION") Notification.Builder(this)
                   val notification = builder
                       .setContentTitle("Punch Hole Companion Active")
-                      .setContentText("Tap camera hole to summon/hide • Tap friend for actions")
+                      .setContentText("Tap camera hole to summon/hide • Double-tap friend to hide")
                       .setSmallIcon(android.R.drawable.ic_menu_compass)
                       .setContentIntent(openPending)
                       .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop Overlay", stopPending)
@@ -1425,16 +1362,6 @@ jobs:
               }
               override fun onBind(intent: Intent?): IBinder? = null
           }
-          EOF
-
-          cat << 'EOF' > app/src/main/java/com/companion/punchhole/BootReceiver.kt
-          package com.companion.punchhole
-
-          import android.content.BroadcastReceiver
-          import android.content.Context
-          import android.content.Intent
-          import android.os.Build
-          import android.provider.Settings
 
           class BootReceiver : BroadcastReceiver() {
               override fun onReceive(context: Context, intent: Intent) {
@@ -1447,26 +1374,8 @@ jobs:
                   }
               }
           }
-          EOF
-
-          cat << 'EOF' > app/src/main/java/com/companion/punchhole/MainActivity.kt
-          package com.companion.punchhole
-
-          import android.app.Activity
-          import android.content.*
-          import android.graphics.Color
-          import android.graphics.Typeface
-          import android.graphics.drawable.GradientDrawable
-          import android.hardware.*
-          import android.net.Uri
-          import android.os.*
-          import android.provider.Settings
-          import android.util.TypedValue
-          import android.view.*
-          import android.widget.*
 
           class MainActivity : Activity(), SensorEventListener {
-
               private lateinit var prefs: SharedPreferences
               private lateinit var previewView: CompanionOverlayView
               private lateinit var overlayBtn: Button
@@ -1474,13 +1383,10 @@ jobs:
               private var gyroActive = false
 
               private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
-
-              private fun roundedBg(fillHex: String, strokeHex: String? = null, radiusDp: Float = 12f): GradientDrawable {
-                  return GradientDrawable().apply {
-                      color = android.content.res.ColorStateList.valueOf(Color.parseColor(fillHex))
-                      cornerRadius = radiusDp * resources.displayMetrics.density
-                      if (strokeHex != null) setStroke(dp(1), Color.parseColor(strokeHex))
-                  }
+              private fun roundedBg(fillHex: String, strokeHex: String? = null, radiusDp: Float = 12f) = GradientDrawable().apply {
+                  color = android.content.res.ColorStateList.valueOf(Color.parseColor(fillHex))
+                  cornerRadius = radiusDp * resources.displayMetrics.density
+                  if (strokeHex != null) setStroke(dp(1), Color.parseColor(strokeHex))
               }
 
               override fun onCreate(savedInstanceState: Bundle?) {
@@ -1503,13 +1409,10 @@ jobs:
                   previewView = CompanionOverlayView(this, isSystemOverlay = false).apply {
                       charMode = prefs.getString("char_mode", "rotate") ?: "rotate"
                       if (charMode != "rotate") activeCharIdx = charMode.toIntOrNull() ?: 0
-                      visitIntervalSec = prefs.getInt("visit_sec", 120)
-                      visitCountdown = visitIntervalSec
-                      camTopOffsetDp = prefs.getInt("cam_y", 6).toFloat()
-                      camLeftOffsetDp = prefs.getInt("cam_x", 0).toFloat()
-                      bubbleDisplaySec = prefs.getInt("read_sec", 9)
-                      textSizeSp = prefs.getInt("text_sp", 16)
-                      targetRopeRatio = prefs.getInt("rope_pct", 28) / 100f
+                      visitIntervalSec = prefs.getInt("visit_sec", 120); visitCountdown = visitIntervalSec
+                      camTopOffsetDp = prefs.getInt("cam_y", 6).toFloat(); camLeftOffsetDp = prefs.getInt("cam_x", 0).toFloat()
+                      bubbleDisplaySec = prefs.getInt("read_sec", 8); textSizeSp = prefs.getInt("text_sp", 16)
+                      targetRopeRatio = prefs.getInt("rope_pct", 24) / 100f
                       fallAnimationEnabled = prefs.getBoolean("fall_on", true)
                       quotesEnabled = prefs.getBoolean("quotes_on", true)
                   }
@@ -1519,7 +1422,6 @@ jobs:
                       text = "Settings ⚙️"; setTextColor(Color.WHITE); setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
                       background = roundedBg("#D90A0D1C", "#33FFFFFF", 99f); visibility = View.GONE; setPadding(dp(16), dp(8), dp(16), dp(8))
                   }
-
                   val dockScroll = ScrollView(this).apply {
                       isVerticalScrollBarEnabled = false; background = roundedBg("#E60A0D1C", "#29FFFFFF", 22f); setPadding(dp(15), dp(12), dp(15), dp(12))
                   }
@@ -1528,7 +1430,7 @@ jobs:
 
                   val topRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
                   val titleTv = TextView(this).apply {
-                      text = "Companion v6.0"; setTextColor(Color.WHITE); setTypeface(typeface, Typeface.BOLD); setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+                      text = "Companion v6.1"; setTextColor(Color.WHITE); setTypeface(typeface, Typeface.BOLD); setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
                       layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
                   }
                   val quotesBtn = Button(this).apply {
@@ -1569,7 +1471,7 @@ jobs:
                   topRow.addView(hideBtn, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(30)))
                   dock.addView(topRow)
 
-                  dock.addView(makeSectionLabel("Active Friend (Studio Shaded • Tap Friend for Natural Actions)"))
+                  dock.addView(makeSectionLabel("Active Friend (Non-Blocking Touch • Tap Friend for Actions)"))
                   val charRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
                   val charOptions = listOf("rotate" to "🔄 All", "0" to "🥷 Ninja", "1" to "🐱 Cat", "2" to "🤖 Bot", "3" to "🦊 Fox")
                   val charButtons = mutableListOf<Pair<String, Button>>()
@@ -1657,15 +1559,13 @@ jobs:
                   setContentView(root)
               }
 
-              private fun makeSectionLabel(txt: String): TextView = TextView(this).apply {
+              private fun makeSectionLabel(txt: String) = TextView(this).apply {
                   text = txt; setTextColor(Color.argb(210, 255, 255, 255)); setTextSize(TypedValue.COMPLEX_UNIT_SP, 10.5f); setTypeface(typeface, Typeface.BOLD); setPadding(0, dp(5), 0, dp(3))
               }
-
-              private fun makeActionButton(label: String, bgHex: String, textColor: Int = Color.WHITE, onClick: () -> Unit): Button = Button(this).apply {
+              private fun makeActionButton(label: String, bgHex: String, textColor: Int = Color.WHITE, onClick: () -> Unit) = Button(this).apply {
                   text = label; setTextColor(textColor); setTextSize(TypedValue.COMPLEX_UNIT_SP, 10.5f); setTypeface(typeface, Typeface.BOLD)
                   background = roundedBg(bgHex, "#24FFFFFF", 10f); setOnClickListener { onClick() }
               }
-
               private fun addSlider(parent: LinearLayout, title: String, minVal: Int, maxVal: Int, initVal: Int, unit: String, onChange: (Int) -> Unit) {
                   val header = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, dp(3), 0, 0) }
                   val labelTv = TextView(this).apply { text = title; setTextColor(Color.argb(210, 255, 255, 255)); setTextSize(TypedValue.COMPLEX_UNIT_SP, 10.5f); layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f) }
@@ -1717,18 +1617,14 @@ jobs:
           }
           EOF
 
-      - name: Build Unsigned Release APK
-        run: |
-          chmod +x gradlew || true
-          gradle assembleRelease -x lint -x lintVitalRelease --no-daemon
-
-      - name: Sign & Align Release APK
+      - name: Build & Sign Release APK
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
+          gradle assembleRelease -x lint -x lintVitalRelease --no-daemon
           mkdir -p release-output
           KS_PASS="${KEYSTORE_PASSWORD:-companion123}"
           K_ALIAS="${KEY_ALIAS:-companion}"
@@ -1742,16 +1638,53 @@ jobs:
           fi
 
           BUILD_TOOLS=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)
-          UNSIGNED_APK="app/build/outputs/apk/release/app-release-unsigned.apk"
-          ALIGNED_APK="release-output/app-release-aligned.apk"
-          SIGNED_APK="release-output/PunchHoleCompanion-release-signed.apk"
-
-          "$BUILD_TOOLS/zipalign" -v -p 4 "$UNSIGNED_APK" "$ALIGNED_APK"
-          "$BUILD_TOOLS/apksigner" sign --ks release.jks --ks-key-alias "$K_ALIAS" --ks-pass pass:"$KS_PASS" --key-pass pass:"$K_PASS" --out "$SIGNED_APK" "$ALIGNED_APK"
-          rm -f "$ALIGNED_APK"
+          "$BUILD_TOOLS/zipalign" -v -p 4 app/build/outputs/apk/release/app-release-unsigned.apk release-output/aligned.apk
+          "$BUILD_TOOLS/apksigner" sign --ks release.jks --ks-key-alias "$K_ALIAS" --ks-pass pass:"$KS_PASS" --key-pass pass:"$K_PASS" --out release-output/PunchHoleCompanion-release-signed.apk release-output/aligned.apk
+          rm -f release-output/aligned.apk
 
       - name: Upload Signed Release APK
         uses: actions/upload-artifact@v4
         with:
           name: PunchHoleCompanion-Kotlin-Release-APK
           path: release-output/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
